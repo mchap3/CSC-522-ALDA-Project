@@ -33,4 +33,4 @@ def candlestick_chart(df, start_date, end_date, indicators=None):
     # print(data)
 
 
-candlestick_chart(dailydf, start_date='2008-01-01', end_date='2010-01-01')
+# candlestick_chart(dailydf, start_date='2008-01-01', end_date='2010-01-01')
