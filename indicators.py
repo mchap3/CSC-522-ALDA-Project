@@ -21,6 +21,7 @@ From https://www.investopedia.com/articles/active-trading/011815/top-technical-i
 
 import pandas as pd
 import datamanipulation
+dailydf = datamanipulation.retrieve()
 
 def sma(data, n=50, calc='close'):
     '''
@@ -39,7 +40,7 @@ def sma(data, n=50, calc='close'):
 
 def ema(data, n=10, calc='close'):
     '''
-    Calculates exponentiol moving average.
+    Calculates exponential moving average.
     :param data: dataframe with standard stock data
     :param n: number of periods
     :param calc: data point to be used in the ema calculation
@@ -53,3 +54,30 @@ def ema(data, n=10, calc='close'):
 
     return data
 
+def rsi(data, n=14, calc='close'):
+    '''
+    Calculates relative strength index.
+    :param data: standard stock data
+    :param n: number of periods
+    :param calc: data series to be used in rsi calculation. Close is standard
+    :return:
+    '''
+    if 'time and date' in data.columns:
+        data = datamanipulation.timeformatter(data)
+    colname = 'RSI' + str(n)
+    reldat = data.loc[:,[calc]]
+
+    reldat['diff'] = reldat.diff(1)
+    reldat['gain'] = reldat['diff'].clip(lower=0)
+    reldat['loss'] = reldat['diff'].clip(upper=0).abs()
+
+    reldat['avg_gain'] = reldat['gain'].rolling(n).mean()
+    reldat['avg_loss'] = reldat['loss'].rolling(n).mean()
+
+    reldat['rs'] = reldat['avg_gain'] / reldat['avg_loss']
+    reldat['rsi'] = 100 - (100 / (1.0 + reldat['rs']))
+    data[colname] = 100 - (100 / (1.0 + reldat['rs']))
+    print(reldat)
+    print(data)
+
+rsi(dailydf)
