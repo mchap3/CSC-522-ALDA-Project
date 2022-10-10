@@ -49,3 +49,35 @@ def date_mask(df, start_date, end_date):
     data = df.loc[mask]
     # data['date'] = pd.to_datetime(data['date'])
     return data
+
+    
+def mid(data):
+    '''
+    :param data: stock data to work with
+    :return: dataframe with midpoint appended (mean of high and low)
+    '''
+
+    data['mid'] = (data['high'] + data['low'])/2
+
+    return data
+
+def center(data):
+    '''
+    :param data: stock data to work with
+    :return: dataframe with center appended (mean of open and close)
+    '''
+
+    data['center'] = (data['open'] + data ['close']) / 2
+
+    return data
+
+
+def centroid(data):
+    '''
+    :param data: stock data to work with
+    :return: dataframe with centroid appended (mean of open, high, low, and close)
+    '''
+
+    data['centroid'] = (data['open'] + data['high'] + data['low'] + data['close']) / 4
+
+    return data
