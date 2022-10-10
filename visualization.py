@@ -15,6 +15,7 @@ dailydf = datamanipulation.timeformatter(dailydf)
 
 def candlestick_chart(df, start_date, end_date, indicators=None):
     '''
+    Plotting tool to see candlestick chart. Not sure if indicators can easily be added with mplfinance
     :param start_date: pass desired start date of stock data in format 'yyyy-mm-dd'
     :param end_date: same as above, but for end date
     :return: generates a plot, does not return any variables
