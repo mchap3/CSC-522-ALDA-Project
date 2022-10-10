@@ -21,7 +21,7 @@ From https://www.investopedia.com/articles/active-trading/011815/top-technical-i
 
 import pandas as pd
 import datamanipulation
-dailydf = datamanipulation.retrieve()
+
 
 def sma(data, n=50, calc='close'):
     '''
@@ -80,4 +80,3 @@ def rsi(data, n=14, calc='close'):
     print(reldat)
     print(data)
 
-rsi(dailydf)
