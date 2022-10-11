@@ -53,3 +53,22 @@ def line_plot(df, start_date, end_date, calc='close', indicators=None):
     data.plot(kind='line', y=calc)
     plt.show()
 
+def misc_plotter(df, y, start_date, end_date):
+    '''
+    Function to plot anything you might be interested in vs. time.
+    :param df: dataframe with standard stock data
+    :param y: item to be plotted. For example - 'close', 'EMA10', 'RSI14', etc.
+    :param start_date: first time series point
+    :param end_date: last time series point
+    :param calc: points chosen to plot
+    :return: no return, generates a plot
+    '''
+
+    if 'time and date' in df.columns:
+        df = datamanipulation.timeformatter(df)
+    mask = (df['date'] >= start_date) & (df['date'] <= end_date)
+    data = df.loc[mask]
+    data.set_index('date', inplace=True)
+
+    data.plot(kind='line', y=y)
+    plt.show()
