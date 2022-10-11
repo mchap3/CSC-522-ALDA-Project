@@ -21,6 +21,7 @@ From https://www.investopedia.com/articles/active-trading/011815/top-technical-i
 
 import pandas as pd
 import datamanipulation
+import numpy as np
 
 
 def sma(data, n=50, calc='close'):
@@ -62,21 +63,41 @@ def rsi(data, n=14, calc='close'):
     :param calc: data series to be used in rsi calculation. Close is standard
     :return:
     '''
+    # chop up data a bit, handle formatting
     if 'time and date' in data.columns:
         data = datamanipulation.timeformatter(data)
     colname = 'RSI' + str(n)
-    reldat = data.loc[:,[calc]]
+    reldat = data.loc[:, [calc]]
 
+    # split everything into gain/loss for relative strength calcs
     reldat['diff'] = reldat.diff(1)
     reldat['gain'] = reldat['diff'].clip(lower=0)
     reldat['loss'] = reldat['diff'].clip(upper=0).abs()
 
-    reldat['avg_gain'] = reldat['gain'].rolling(n).mean()
-    reldat['avg_loss'] = reldat['loss'].rolling(n).mean()
+    # calculate averages for relative strength. The ewm syntax mimics the exponential smoothing from the wilders moving
+    # average
+    reldat['avg_gain'] = reldat['gain'].ewm(com=n-1, min_periods=n).mean()
+    reldat['avg_loss'] = reldat['loss'].ewm(com=n-1, min_periods=n).mean()
 
+    # final relative strength calcs, append to original data
     reldat['rs'] = reldat['avg_gain'] / reldat['avg_loss']
     reldat['rsi'] = 100 - (100 / (1.0 + reldat['rs']))
     data[colname] = 100 - (100 / (1.0 + reldat['rs']))
-    print(reldat)
-    print(data)
 
+    return data
+
+
+def obv(data, calc='close'):
+    '''
+    Calculates on balance volume and adds it to the chart.
+    :param data: dataframe containing standard stock data (including volume)
+    :param calc: data point to base calculations off. Closing price is standard.
+    :return: original data frame with on balance volume values appended
+    '''
+    if 'time and date' in data.columns:
+        data = datamanipulation.timeformatter(data)
+    colname = 'OBV_' + calc
+    reldat = data.loc[:, [calc, 'volume']]
+
+    data[colname] = (np.sign(reldat['close'].diff()) * reldat['volume']).fillna(0).cumsum()
+    return data
