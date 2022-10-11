@@ -11,7 +11,7 @@ dailydf = datamanipulation.retrieve()
 weeklydf = datamanipulation.retrieve(timeframe='weekly')
 monthlydf = datamanipulation.retrieve(timeframe='monthly')
 
-dailydf = datamanipulation.timeformatter(dailydf)
+# dailydf = datamanipulation.timeformatter(dailydf)
 
 def candlestick_chart(df, start_date, end_date, indicators=None):
     '''
@@ -33,4 +33,23 @@ def candlestick_chart(df, start_date, end_date, indicators=None):
     # print(data)
 
 
-# candlestick_chart(dailydf, start_date='2008-01-01', end_date='2010-01-01')
+
+def line_plot(df, start_date, end_date, calc='close', indicators=None):
+    '''
+    Simple line plot of stock data.
+    :param data: stock dataframe
+    :param start_date: first time series point displayed
+    :param end_date: last time series point displayed
+    :param calc: points chosen to plot
+    :param indicators: list of indicators to pass, will have to update for this functionality
+    :return: doesn't return anything, just generates the plot
+    '''
+    if 'time and date' in df.columns:
+        df = datamanipulation.timeformatter(df)
+    mask = (df['date'] >= start_date) & (df['date'] <= end_date)
+    data = df.loc[mask]
+    data.set_index('date', inplace=True)
+
+    data.plot(kind='line', y=calc)
+    plt.show()
+
