@@ -29,14 +29,15 @@ def five_Day_Centroid(data):
     data = centroid(data)
     minimum_delta = 0.1
     data['Rolling5'] = data['centroid'].rolling(5).mean()
+    data.Rolling5 = data.Rolling5.shift(-5)
     data['Rolling5_Buy'] = data.Rolling5 > (data.Rolling5.shift() + minimum_delta)
     data['Rolling5_Sell'] = data.Rolling5 < (data.Rolling5.shift() - minimum_delta)
     data['Buy_Sell'] = data.Rolling5_Buy * 1 + data.Rolling5_Sell * (-1)
 
-    #print(data[['centroid', 'Rolling5', 'Rolling5_Buy', 'Rolling5_Sell', 'Buy_Sell']].head(15))
+    print(data[['centroid', 'Rolling5', 'Rolling5_Buy', 'Rolling5_Sell', 'Buy_Sell']].head(15))
 
     return data
 
-#five_Day_Centroid(retrieve())
+five_Day_Centroid(retrieve())
 
 
