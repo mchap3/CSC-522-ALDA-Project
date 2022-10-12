@@ -17,18 +17,26 @@ def centroid(data):
 
     return data
 
-def five_Day_Centroid():
-    daily = retrieve()
-    daily = centroid(daily)
-    daily['Rolling5'] = daily['centroid'].rolling(5).mean()
-    daily['Rolling5_Buy'] = daily.Rolling5 > (daily.Rolling5.shift() + 0.1)
-    daily['Rolling5_Sell'] = daily.Rolling5 < (daily.Rolling5.shift() - 0.1)
-    daily['Buy_Sell'] = daily.Rolling5_Buy * 1 + daily.Rolling5_Sell * (-1)
+def five_Day_Centroid(data):
+    '''
+    Created a function five_Day_Centroid, in indicators.py that runs a 5-day
+    moving average of the Centroid and then classifies as 1 (buy) or -1 (sell)
+    if the 5-day average changed by more than ten cents and 0 if it didn't.
+    :param data: stock data to work with
+    :return: dataframe with columns for five-day average, buy, sell, and Buy_Sell appended
+    '''
 
-    print(daily[['centroid', 'Rolling5', 'Rolling5_Buy', 'Rolling5_Sell', 'Buy_Sell']].head(15))
+    data = centroid(data)
+    minimum_delta = 0.1
+    data['Rolling5'] = data['centroid'].rolling(5).mean()
+    data['Rolling5_Buy'] = data.Rolling5 > (data.Rolling5.shift() + minimum_delta)
+    data['Rolling5_Sell'] = data.Rolling5 < (data.Rolling5.shift() - minimum_delta)
+    data['Buy_Sell'] = data.Rolling5_Buy * 1 + data.Rolling5_Sell * (-1)
 
-    return daily
+    #print(data[['centroid', 'Rolling5', 'Rolling5_Buy', 'Rolling5_Sell', 'Buy_Sell']].head(15))
 
-five_Day_Centroid()
+    return data
+
+#five_Day_Centroid(retrieve())
 
 
