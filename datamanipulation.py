@@ -40,3 +40,12 @@ def timeformatter(df):
     df.drop(columns=['time and date'], inplace=True)
 
     return df
+
+
+def date_mask(df, start_date, end_date):
+    if 'time and date' in df.columns:
+        df = timeformatter(df)
+    mask = (df['date'] >= start_date) & (df['date'] <= end_date)
+    data = df.loc[mask]
+    # data['date'] = pd.to_datetime(data['date'])
+    return data
