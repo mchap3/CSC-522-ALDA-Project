@@ -26,12 +26,17 @@ def five_Day_Centroid(data):
     '''
 
     data = centroid(data)
-    minimum_delta = 0.05
-    data['Rolling5'] = data['centroid'].rolling(5).mean()
-    data.Rolling5 = data.Rolling5.shift(-5)
+    minimum_delta = .15
+    num_rolling_days = 3
+    data['Rolling5'] = data['centroid'].rolling(num_rolling_days).mean()
+    data.Rolling5 = data.Rolling5.shift(-1 * num_rolling_days)
     data['Rolling5_Buy'] = data.Rolling5 > (data.Rolling5.shift() + minimum_delta)
     data['Rolling5_Sell'] = data.Rolling5 < (data.Rolling5.shift() - minimum_delta)
     data['Buy_Sell'] = data.Rolling5_Buy * 1 + data.Rolling5_Sell * (-1)
+
+    for current in data['Buy_Sell']:
+        if current == 0:
+            data.loc['Buy_Sell':current] = data.loc['Buy_Sell':current - 1]
 
     print(data[['centroid', 'Rolling5', 'Rolling5_Buy', 'Rolling5_Sell', 'Buy_Sell']].head(15))
 
