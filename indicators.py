@@ -50,7 +50,7 @@ def macd(data, n=12, m=26, s=9, calc='close'):
 
     # difference from signal line
     data['MACD_diff'] = data['MACD'] - data[f'EMA_{s}']
-    data.drop(columns=[f'EMA_{n}', f'EMA_{m}'], inplace=True)
+    data.drop(columns=[f'EMA_{n}', f'EMA_{m}', f'EMA_{s}'], inplace=True)
     return data
 
 
