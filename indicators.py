@@ -2,10 +2,9 @@
 Place to calculate any desirable indicators to incorporate into the machine learning bot.
 '''
 
-import pandas as pd
-import datamanipulation
-import numpy as np
 from datamanipulation import *
+import numpy as np
+import matplotlib.pyplot as plt
 
 def centroid(data):
     '''
@@ -27,7 +26,7 @@ def five_Day_Centroid(data):
     '''
 
     data = centroid(data)
-    minimum_delta = 0.1
+    minimum_delta = 0.05
     data['Rolling5'] = data['centroid'].rolling(5).mean()
     data.Rolling5 = data.Rolling5.shift(-5)
     data['Rolling5_Buy'] = data.Rolling5 > (data.Rolling5.shift() + minimum_delta)
@@ -35,6 +34,15 @@ def five_Day_Centroid(data):
     data['Buy_Sell'] = data.Rolling5_Buy * 1 + data.Rolling5_Sell * (-1)
 
     print(data[['centroid', 'Rolling5', 'Rolling5_Buy', 'Rolling5_Sell', 'Buy_Sell']].head(15))
+
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+    ax1.plot(data['Rolling5'][1000:1250])
+    ax2.plot(data['Buy_Sell'][1000:1250], c='r')
+    ax1.set_ylabel('SPY Price')
+    ax2.set_ylabel('Class')
+    ax2.set_yticks(range(-1, 2, 1))
+    plt.show()
 
     return data
 
