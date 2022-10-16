@@ -2,9 +2,7 @@
 Place for putting together machine learning functions/analyses.
 '''
 
-import pandas as pd
-import numpy as np
-import datamanipulation
+from indicators import *
 
 
 def cont_trend_label(df, calc='close', w=0.05):
@@ -98,3 +96,14 @@ def five_day_centroid(data):
             data.loc[current, 'Buy_Sell'] = data.loc[current - 1, 'Buy_Sell']
 
     return data
+
+def split_data(data, n_splits=5):
+    '''
+    :param data: stock data to work with
+    :return: tscv
+    '''
+    from sklearn.model_selection import TimeSeriesSplit
+    n_splits = 5
+    tscv = TimeSeriesSplit(n_splits)
+
+    return tscv
