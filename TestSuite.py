@@ -8,5 +8,6 @@ dailydf = retrieve()
 weeklydf = retrieve(timeframe='weekly')
 monthlydf = retrieve(timeframe='monthly')
 
-data = five_day_centroid(dailydf)
-knn(data, 5)
+data = all_indicators(retrieve())
+print(list(data.columns))
+

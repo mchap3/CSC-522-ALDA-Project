@@ -41,36 +41,11 @@ def timeformatter(df):
 
     return df
 
-# def knn(data, k = 5, fold = 10):
-#     '''
-#     Uses knn and k-fold validation
-#     :param data: stock data with classification column already appended
-#     :param k: the number of nearest neighbors to use for classification
-#     :param fold: the number of folds
-#     :return: dataframe with column for knn predicted value appended
-#     '''
-#     import numpy as np
-#     from sklearn.neighbors import KNeighborsClassifier
-#     from sklearn.model_selection import cross_val_score
-#
-#     print(list(data.columns))
-#
-#     # create KNN classifier
-#     knn_k = KNeighborsClassifier(n_neighbors = k, metric = 'euclidean')
-#
-#     # TODO:  create training and testing sets
-#
-#     # train KNN classifier
-#     print(train.shape)
-#     knn_k.fit(train.reshape(-1, 1), Y[train_idx])
-#
-#     # test set predictions
-#     y_pred = knn_k.predict(test.reshape(-1, 1))
-#
-#     # determine error
-#     e = Y[test_idx] != y_pred
-#     print(e)
-#     error = sum(e) / len(test)
-#     print("error for k = ", k, ":", np.mean(error))
-#
-#     return data
+
+def date_mask(df, start_date, end_date):
+    if 'time and date' in df.columns:
+        df = timeformatter(df)
+    mask = (df['date'] >= start_date) & (df['date'] <= end_date)
+    data = df.loc[mask]
+    # data['date'] = pd.to_datetime(data['date'])
+    return data
