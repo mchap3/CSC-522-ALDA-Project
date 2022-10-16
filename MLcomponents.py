@@ -66,3 +66,35 @@ def cont_trend_label(df, calc='close', w=0.05):
     df['Class'] = y
 
     return df
+
+
+def five_day_centroid(data):
+    '''
+    Runs a 5-day moving average of the Centroid and then classifies as 1 (buy) or -1 (sell)
+    if the 5-day average changed by more than the threshold.
+    :param data: stock data to work with
+    :return: dataframe with columns for five-day average, buy, sell, and Buy_Sell appended
+    '''
+
+    data = centroid(data)
+    minimum_delta = .25
+    num_rolling_days = 3
+    data['Rolling5'] = data['centroid'].rolling(num_rolling_days).mean()
+    data.Rolling5 = data.Rolling5.shift(-1 * num_rolling_days)
+    data['Rolling5_Buy'] = data.Rolling5 > (data.Rolling5.shift() + minimum_delta)
+    data['Rolling5_Sell'] = data.Rolling5 < (data.Rolling5.shift() - minimum_delta)
+    data['Buy_Sell'] = data.Rolling5_Buy * 1 + data.Rolling5_Sell * (-1)
+
+    # Drop all rows with NaN
+    data = data.dropna()
+    # Reset row numbers
+    data = data.reset_index(drop=True)
+    # Remove unneeded columns
+    data = data.drop('Rolling5_Buy', axis = 1)
+    data = data.drop('Rolling5_Sell', axis = 1)
+
+    for current in data.loc[data['Buy_Sell'] == 0].index:
+        if current != 0:
+            data.loc[current, 'Buy_Sell'] = data.loc[current - 1, 'Buy_Sell']
+
+    return data
