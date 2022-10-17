@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e01ccb5f-e977-471e-bcb4-8b8e3165a880" name="Changes" comment="Commiting .idea">
+    <list default="true" id="e01ccb5f-e977-471e-bcb4-8b8e3165a880" name="Changes" comment="Added a visualizaiton to visualization.py. Added code to TestSuite.py to split data and show a visualization.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MLcomponents.py" beforeDir="false" afterPath="$PROJECT_DIR$/MLcomponents.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TestSuite.py" beforeDir="false" afterPath="$PROJECT_DIR$/TestSuite.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/visualization.py" beforeDir="false" afterPath="$PROJECT_DIR$/visualization.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,7 +75,14 @@
       <option name="project" value="LOCAL" />
       <updated>1665857142675</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Added a visualizaiton to visualization.py. Added code to TestSuite.py to split data and show a visualization.">
+      <created>1665941073990</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1665941073990</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -94,6 +100,7 @@
     <MESSAGE value="Added a plot of days 1000-1250 and the associated buy/sell line." />
     <MESSAGE value="Trying to get rid of 0 by checking to see if Buy_Sell is zero. If it is, make Buy_Sell equal to the previous Buy_Sell." />
     <MESSAGE value="Merging all functions into one indicators.py. Also added a function to combine all indicators into one df." />
-    <option name="LAST_COMMIT_MESSAGE" value="Merging all functions into one indicators.py. Also added a function to combine all indicators into one df." />
+    <MESSAGE value="Added a visualizaiton to visualization.py. Added code to TestSuite.py to split data and show a visualization." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added a visualizaiton to visualization.py. Added code to TestSuite.py to split data and show a visualization." />
   </component>
 </project>

@@ -3,7 +3,7 @@ Place for putting together machine learning functions/analyses.
 '''
 
 from indicators import *
-
+from sklearn.neighbors import KNeighborsClassifier
 
 def cont_trend_label(df, calc='close', w=0.05):
     """
@@ -78,7 +78,7 @@ def five_day_centroid(data):
     minimum_delta = .25
     num_rolling_days = 3
     data['Rolling5'] = data['centroid'].rolling(num_rolling_days).mean()
-    data.Rolling5 = data.Rolling5.shift(-1 * num_rolling_days)
+    data.Rolling5 = data.Rolling5.shift(-1 * num_rolling_days - 1)
     data['Rolling5_Buy'] = data.Rolling5 > (data.Rolling5.shift() + minimum_delta)
     data['Rolling5_Sell'] = data.Rolling5 < (data.Rolling5.shift() - minimum_delta)
     data['Buy_Sell'] = data.Rolling5_Buy * 1 + data.Rolling5_Sell * (-1)
@@ -88,8 +88,9 @@ def five_day_centroid(data):
     # Reset row numbers
     data = data.reset_index(drop=True)
     # Remove unneeded columns
-    data = data.drop('Rolling5_Buy', axis = 1)
-    data = data.drop('Rolling5_Sell', axis = 1)
+    data = data.drop('date', axis=1)
+    data = data.drop('Rolling5_Buy', axis=1)
+    data = data.drop('Rolling5_Sell', axis=1)
 
     for current in data.loc[data['Buy_Sell'] == 0].index:
         if current != 0:
@@ -107,3 +108,30 @@ def split_data(data, n_splits=5):
     tscv = TimeSeriesSplit(n_splits)
 
     return tscv
+
+
+def do_knn(train, train_idx, test, test_idx, y, k=3):
+
+    max = 0
+
+    for k in range(1, 11):
+        # create KNN classifier
+        knn = KNeighborsClassifier(n_neighbors=k, metric='euclidean')
+
+        # train KNN classifier
+        knn.fit(train, y[train_idx].ravel())
+
+        # test set predictions
+        y_pred = knn.predict(test)
+
+        # determine error
+        y_pred = y_pred.reshape(805, 1)
+        e = y[test_idx] != y_pred
+
+        error = e.sum() / len(test)
+        if error > max:
+            max = error
+            max_k = k
+        print('error:', round(error, 3))
+
+    print('max:', round(max, 3), 'k = ', max_k)
