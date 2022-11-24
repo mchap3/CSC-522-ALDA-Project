@@ -9,6 +9,12 @@ import MLcomponents
 import pandas as pd
 import numpy as np
 import math
+import matplotlib.pyplot as plt
+import sys
+
+if not sys.warnoptions:
+    import warnings
+    warnings.simplefilter("ignore")
 
 dailydf = datamanipulation.retrieve()
 dailydf = datamanipulation.centroid(dailydf)
@@ -16,11 +22,16 @@ dailydf = datamanipulation.center(dailydf)
 dailydf = datamanipulation.mid(dailydf)
 dailydf = datamanipulation.timeformatter(dailydf)
 
-start_date = '2008-01-01'
-end_date = '2009-01-01'
+start_date = '2002-01-01'
+end_date = '2012-01-01'
 mask = (dailydf['date'] >= start_date) & (dailydf['date'] <= end_date)
 data = dailydf.loc[mask]
-data = MLcomponents.cont_trend_label(data, w=0.02)
+# print(data.to_string())
+# check = MLcomponents.cont_trend_label(data, w=0.02)
+# print(check.to_string())
+# data = MLcomponents.cont_trend_label(data, w=0.02)
+# data = MLcomponents.five_day_centroid(data)
+
 
 def maxdrawdown_long(data):
     '''
@@ -29,7 +40,7 @@ def maxdrawdown_long(data):
     :param data: dataframe with stock data
     :return: max drawdown
     '''
-    data = data.iloc[:-1 , :]
+    data = data.iloc[:-1, :]
     inds = data.index.values.tolist()
     window = len(inds)
     rollingmax = data['high'].rolling(window, min_periods=1).max()
@@ -47,7 +58,8 @@ def maxdrawdown_short(data):
     :return: same as long
     '''
 
-    data = data.iloc[:-1 , :]
+    # print(data['date'])
+    data = data.iloc[:-1, :]
     inds = data.index.values.tolist()
     window = len(inds)
     rollingmin = data['low'].rolling(window, min_periods=1).min()
@@ -102,7 +114,8 @@ def active_return(data):
         # else:
         #     buy = False
         #     print('Sell')
-        #
+        maxindex = max(data.index.values.tolist())
+        # if len(indices) == 1 & (indices[0] + 1) < maxindex:
         if len(indices) == 1:
             trade.loc[indices[0] + 1] = data.loc[indices[0] + 1]
             indices = trade.index.values.tolist()
@@ -193,7 +206,7 @@ def estimate_returns(data):
     summary = {}
     summary['summary'] = ['total return ($)', 'return (%)', 'max drawdown (%)', 'avg. gain per trade (%)']
     # Calculate the simple buy and hold return over the chosen time period, add to dict.
-    print(data.to_string())
+    # print(data.to_string())
     inds = data.index.values.tolist()
     simplebuy = data.loc[inds[0], 'mid']
     nshares = math.floor(initial_capital / simplebuy)
@@ -217,12 +230,87 @@ def estimate_returns(data):
     for item in activedata:
         gains += item[3]
     avg_gain = round(gains/len(activedata), 2)
-    summary['active'] = [realreturn, pctreturn, mdd, avg_gain]
+    keyname = 'active'
+    summary[keyname] = [realreturn, pctreturn, mdd, avg_gain]
 
     summarydf = pd.DataFrame.from_dict(summary)
 
     return summarydf
 
 
+# cont = estimate_returns(MLcomponents.cont_trend_label(data, w=0.1), method='cont_trend_label')
+# mov = estimate_returns(MLcomponents.five_day_centroid(data), method='five_day_centroid')
+# cont['active: five_day_centroid'] = mov['active: five_day_centroid']
+# cont.rename(columns={'summary': 'summary: w=0.1'}, inplace=True)
+# cont.set_index('summary: w=0.1', inplace=True)
+# print(cont.to_string())
+# print(mov)
+#
+start1 = '2002-01-01'
+end1 = '2012-01-01'
+start2 = '2007-01-01'
+end2 = '2017-01-01'
+start3 = '2011-01-01'
+end3 = '2021-01-01'
+mask1 = (dailydf['date'] >= start1) & (dailydf['date'] <= end1)
+mask2 = (dailydf['date'] >= start2) & (dailydf['date'] <= end2)
+mask3 = (dailydf['date'] >= start3) & (dailydf['date'] <= end3)
+data1 = dailydf.loc[mask1]
+data2 = dailydf.loc[mask2]
+data3 = dailydf.loc[mask3]
 
-estimate_returns(data)
+results = []
+for num in range(5, 50, 1):
+    entry = []
+    w = num / 1000
+    entry.append(w)
+    data1 = MLcomponents.cont_trend_label(data1, w=w)
+    summaries = estimate_returns(data1)
+    entry.append(summaries.iloc[0, 2])
+    results.append(entry)
+
+summary1 = pd.DataFrame(results, columns=['w parameter', 'real return 2002-2012'])
+
+results = []
+for num in range(5, 50, 1):
+    entry = []
+    w = num / 1000
+    entry.append(w)
+    data2 = MLcomponents.cont_trend_label(data2, w=w)
+    summaries = estimate_returns(data2)
+    entry.append(summaries.iloc[0, 2])
+    results.append(entry)
+
+summary2 = pd.DataFrame(results, columns=['w parameter', 'real return 2007-2017'])
+
+results = []
+for num in range(5, 50, 1):
+    entry = []
+    w = num / 1000
+    entry.append(w)
+    data3 = MLcomponents.cont_trend_label(data3, w=w)
+    summaries = estimate_returns(data3)
+    entry.append(summaries.iloc[0, 2])
+    results.append(entry)
+
+summary3 = pd.DataFrame(results, columns=['w parameter', 'real return 2011-2021'])
+
+summary1['real return 2007-2017'] = summary2['real return 2007-2017']
+summary1['real return 2011-2021'] = summary3['real return 2011-2021']
+summary1.set_index('w parameter', inplace=True)
+
+fig, ax1 = plt.subplots()
+ax1.plot(summary1['real return 2002-2012'])
+ax1.plot(summary1['real return 2007-2017'])
+ax1.plot(summary1['real return 2011-2021'])
+ax1.set_ylabel('Real Return ($)')
+ax1.set_xlabel('w')
+plt.title('Real Decade Stock Returns vs. w Parameter')
+plt.legend(['2002-2012', '2007-2017', '2011-2021'])
+plt.show()
+
+# print(summary1.to_string())
+# summaries = estimate_returns(data, w=0.02)
+# print(results)
+
+
