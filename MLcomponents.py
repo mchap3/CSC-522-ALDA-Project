@@ -5,6 +5,7 @@ Place for putting together machine learning functions/analyses.
 import pandas as pd
 import numpy as np
 import datamanipulation
+import indicators
 
 
 def cont_trend_label(df, calc='close', w=0.05):
@@ -76,7 +77,7 @@ def five_day_centroid(data):
     :return: dataframe with columns for five-day average, buy, sell, and Buy_Sell appended
     '''
 
-    data = centroid(data)
+    data = indicators.centroid(data)
     minimum_delta = .25
     num_rolling_days = 3
     data['Rolling5'] = data['centroid'].rolling(num_rolling_days).mean()

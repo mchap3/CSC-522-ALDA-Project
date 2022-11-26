@@ -7,11 +7,11 @@ import datamanipulation
 import mplfinance as mpl
 from matplotlib import pyplot as plt
 
-dailydf = datamanipulation.retrieve()
-weeklydf = datamanipulation.retrieve(timeframe='weekly')
-monthlydf = datamanipulation.retrieve(timeframe='monthly')
-
-dailydf = datamanipulation.timeformatter(dailydf)
+# dailydf = datamanipulation.retrieve()
+# weeklydf = datamanipulation.retrieve(timeframe='weekly')
+# monthlydf = datamanipulation.retrieve(timeframe='monthly')
+#
+# dailydf = datamanipulation.timeformatter(dailydf)
 
 def candlestick_chart(df, start_date, end_date, indicators=None):
     '''
@@ -32,4 +32,4 @@ def candlestick_chart(df, start_date, end_date, indicators=None):
     # print(data)
 
 
-candlestick_chart(dailydf, start_date='2008-01-01', end_date='2010-01-01')
+# candlestick_chart(dailydf, start_date='2008-01-01', end_date='2010-01-01')
