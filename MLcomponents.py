@@ -78,8 +78,8 @@ def five_day_centroid(data):
     '''
 
     data = indicators.centroid(data)
-    minimum_delta = .25
-    num_rolling_days = 3
+    minimum_delta = .5
+    num_rolling_days = 5
     data['Rolling5'] = data['centroid'].rolling(num_rolling_days).mean()
     data.Rolling5 = data.Rolling5.shift(-1 * num_rolling_days)
     data['Rolling5_Buy'] = data.Rolling5 > (data.Rolling5.shift() + minimum_delta)
@@ -94,6 +94,7 @@ def five_day_centroid(data):
     data = data.drop('Rolling5_Buy', axis = 1)
     data = data.drop('Rolling5_Sell', axis = 1)
 
+    data.loc[0, 'Buy_Sell'] = 1
     for current in data.loc[data['Buy_Sell'] == 0].index:
         if current != 0:
             data.loc[current, 'Buy_Sell'] = data.loc[current - 1, 'Buy_Sell']
