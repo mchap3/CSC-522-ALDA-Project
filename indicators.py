@@ -101,3 +101,76 @@ def obv(data, calc='close'):
 
     data[colname] = (np.sign(reldat['close'].diff()) * reldat['volume']).fillna(0).cumsum()
     return data
+
+def macd(data, n=12, m=26, s=9, calc='close'):
+    """
+    Calculates Moving Average Convergence/Divergence oscillator. Indicates momentum
+    as the difference between shorter-term and longer-term moving averages. Also
+    calculates difference from signal line (exponential weighted average of MACD)
+    :param data: dataframe with stock price data
+    :param n: days in shorter timeframe (default: 12)
+    :param m: days in longer timeframe (default: 26)
+    :param s: days in signal line timeframe (default: 9)
+    :param calc: data attribute to calculate MACD (default: 'close')
+    :return: dataframe with MACD attributes added
+    """
+    # calculate fast/slow EMAs
+    data = ema(data, n, calc)
+    data = ema(data, m, calc)
+    data['MACD'] = data[f'EMA{n}'] - data[f'EMA{m}']
+
+    # create signal line from above
+    ema(data, s, 'MACD')
+
+    # difference from signal line
+    data['MACD_diff'] = data['MACD'] - data[f'EMA{s}']
+    data.drop(columns=[f'EMA{n}', f'EMA{m}', f'EMA{s}'], inplace=True)
+    return data
+
+
+def bollinger_bands(data, n=20, m=2):
+    """
+    Calculates Bollinger Bands as indicators of overbought and oversold levels.
+    :param data: dataframe with stock price data
+    :param n: days to be included in SMA window (default: 20)
+    :param m: standard deviation multiplication factor (default: 2)
+    :return: dataframe with upper/lower Bollanger Band attributes added
+    """
+    boll_dat = data.loc[:, ['high', 'low', 'close']]
+
+    # calculate moving avg of typical price
+    boll_dat['TP'] = boll_dat.sum(axis=1) / 3
+    boll_dat['TP_SMA'] = boll_dat.loc[:, 'TP'].rolling(n).mean()
+
+    # calculate std and bands
+    boll_dat['TP_std'] = boll_dat.loc[:, 'TP'].rolling(n).std()
+    data['BOLU'] = boll_dat['TP_SMA'] + boll_dat['TP_std'] * 2
+    data['BOLD'] = boll_dat['TP_SMA'] - boll_dat['TP_std'] * 2
+
+    return data
+
+
+def all_indicators(data):
+    """
+    Calls the following functions to make a combined df: ema(n = 10), ema(n = 25), ema(n = 50), sma(n = 100),
+    sma(n = 200), rsi(n = 3), rsi(n = 14), macd(), bollinger_bands(), obv(), and centroid().
+    Will also include, open, high, low, close, and volume from retrieve().
+    :param data: dataframe with stock price data
+    :return: dataframe with the following attributes and classifications added: ['open', 'high', 'low', 'close',
+    'volume', 'date', 'EMA10', 'EMA25', 'EMA50', 'SMA100', 'SMA200', 'RSI3', 'RSI14', 'MACD', 'MACD_diff',
+    'BOLU', 'BOLD', 'OBV_close', 'centroid', 'Rolling5']
+    """
+
+    data = ema(data, n=10)
+    data = ema(data, n=25)
+    data = ema(data, n=50)
+    data = sma(data, n=100)
+    data = sma(data, n=200)
+    data = rsi(data, n=3)
+    data = rsi(data, n=14)
+    data = macd(data)
+    data = bollinger_bands(data)
+    data = obv(data)
+
+    return data
+
