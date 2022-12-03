@@ -18,7 +18,7 @@ from sklearn.model_selection import RandomizedSearchCV
 import sys
 import tensorflow as tf
 from tensorflow import keras
-import Validate_Analyze
+import accountperformance
 import matplotlib.pyplot as plt
 
 if not sys.warnoptions:
@@ -360,12 +360,12 @@ def evaluate_returns(idealresults, MLresults):
     # Calculate ideal returns
     idealresults = datamanipulation.mid(idealresults)
     idealresults.reset_index(inplace=True)
-    idealreturns = Validate_Analyze.estimate_returns(idealresults)
+    idealreturns, idealacctdf = accountperformance.estimate_returns(idealresults)
 
     # Calculate ML returns
     MLresults = datamanipulation.mid(MLresults)
     MLresults.reset_index(inplace=True)
-    MLreturns = Validate_Analyze.estimate_returns(MLresults)
+    MLreturns, MLacctdf = accountperformance.estimate_returns(MLresults)
 
     # Print Results
     print('Ideal Return Comparison: ')
@@ -373,6 +373,8 @@ def evaluate_returns(idealresults, MLresults):
     print('\n')
     print('KNN Return Comparison: ')
     print(MLreturns)
+
+    return idealacctdf, MLacctdf
 
 
 

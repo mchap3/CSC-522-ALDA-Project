@@ -2,16 +2,19 @@
 Contains tools/functions to visualize data, chart elements, and some of the ML outputs.
 '''
 import pandas as pd
-
+import numpy as np
+import indicators
 import datamanipulation
-import mplfinance as mpl
+# import mplfinance as mpl
 from matplotlib import pyplot as plt
+import MLcomponents
+
 
 dailydf = datamanipulation.retrieve()
 weeklydf = datamanipulation.retrieve(timeframe='weekly')
 monthlydf = datamanipulation.retrieve(timeframe='monthly')
 
-# dailydf = datamanipulation.timeformatter(dailydf)
+dailydf = datamanipulation.timeformatter(dailydf)
 
 def candlestick_chart(df, start_date, end_date, indicators=None):
     '''
@@ -34,7 +37,7 @@ def candlestick_chart(df, start_date, end_date, indicators=None):
 
 
 
-def line_plot(df, start_date, end_date, calc='close', indicators=None):
+def line_plot(df, start_date, end_date, calc='centroid', indicator=None):
     '''
     Simple line plot of stock data.
     :param data: stock dataframe
@@ -49,9 +52,29 @@ def line_plot(df, start_date, end_date, calc='close', indicators=None):
     mask = (df['date'] >= start_date) & (df['date'] <= end_date)
     data = df.loc[mask]
     data.set_index('date', inplace=True)
+    # data = indicators.ema(data, n=10, calc=calc)
 
-    data.plot(kind='line', y=calc)
+    # classdata = MLcomponents.minmax(data, start_date, end_date, calc='EMA10')
+
+
+    # classdata.set_index('date', inplace=True)
+
+
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+    ax1.plot(data[calc])
+    ax2.plot(data['Class'], c='r')
+    ax1.set_ylabel('SPY Price')
+    ax2.set_ylabel('Class')
+    ax2.set_yticks(range(-1, 2, 1))
+    plt.xticks(rotation=70, ha='right')
+    # if indicator == 'EMA3':
+    #     plt.data['EMA3']
+
     plt.show()
+
+    # data.plot(kind='line', y='centroid')
+    # plt.show()
 
 def misc_plotter(df, y, start_date, end_date):
     '''
@@ -71,4 +94,14 @@ def misc_plotter(df, y, start_date, end_date):
     data.set_index('date', inplace=True)
 
     data.plot(kind='line', y=y)
+    plt.show()
+
+def account_comparison_plot(idealdf, MLdf):
+
+    plt.plot(idealdf['account value'], label='Ideal')
+    plt.plot(MLdf['account value'], label='ML')
+    plt.title('Account Growth Comparison Over Time')
+    plt.xlabel('Date')
+    plt.ylabel('Account Value ($)')
+    plt.legend()
     plt.show()

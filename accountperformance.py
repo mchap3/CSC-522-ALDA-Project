@@ -247,6 +247,7 @@ def estimate_returns(data):
 
     summarydf = pd.DataFrame.from_dict(summary)
     acctvaldf = pd.concat(acctdata)
+    acctvaldf.set_index('date', inplace=True)
 
 
     return summarydf, acctvaldf

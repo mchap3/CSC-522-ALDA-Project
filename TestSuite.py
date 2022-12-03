@@ -3,7 +3,7 @@ Place to build functions and/or test out the program pieces and try joining them
 '''
 import pandas as pd
 
-import Validate_Analyze
+import accountperformance
 import indicators
 import visualization
 import datamanipulation
@@ -44,4 +44,7 @@ idealresults, MLresults = MLcomponents.assemble_results(y_pred, y_test, original
 MLcomponents.evaluate_confusion(idealresults, MLresults)
 
 # Evaluate return metrics
-MLcomponents.evaluate_returns(idealresults, MLresults)
+idealacctdf, MLacctdf = MLcomponents.evaluate_returns(idealresults, MLresults)
+
+# Plot account value over time
+visualization.account_comparison_plot(idealacctdf, MLacctdf)
