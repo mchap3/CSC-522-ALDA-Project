@@ -2,7 +2,6 @@
 Contains tools/functions to visualize data, chart elements, and some of the ML outputs.
 '''
 import pandas as pd
-
 import datamanipulation
 import mplfinance as mpl
 from matplotlib import pyplot as plt
@@ -33,6 +32,14 @@ def candlestick_chart(df, start_date, end_date, indicators=None):
     # print(data)
 
 
+def plot_cv_indices(cv, n_splits, X, y, date_col=None):
+    """
+    Create a sample plot for indices of a cross-validation object.
+    Function modified from
+    https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TimeSeriesSplit.html
+    """
+
+    fig, ax = plt.subplots(1, 1, figsize=(11, 7))
 
 def line_plot(df, start_date, end_date, calc='close', indicators=None):
     '''
