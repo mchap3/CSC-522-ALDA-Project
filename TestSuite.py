@@ -2,6 +2,8 @@
 Place to build functions and/or test out the program pieces and try joining them together.
 '''
 import pandas as pd
+
+import Validate_Analyze
 import indicators
 import visualization
 import datamanipulation
@@ -33,7 +35,7 @@ x_train, x_val, x_test = MLcomponents.SSnormalize(x_train, x_val, x_test)
 y_train, y_val, y_test = MLcomponents.y_cleaner(y_train, y_val, y_test)
 
 # Use ML model to make prediction
-y_pred = MLcomponents.KNN_prediction(x_train, y_train, x_test)
+y_pred = MLcomponents.RF_prediction(x_train, y_train, x_test)
 
 # Take predicted values and reattach them to previous data for evaluation
 idealresults, MLresults = MLcomponents.assemble_results(y_pred, y_test, original)
