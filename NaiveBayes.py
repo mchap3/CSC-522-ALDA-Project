@@ -1,0 +1,128 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import datamanipulation
+import indicators
+import MLcomponents
+import Validate_Analyze
+from sklearn.model_selection import TimeSeriesSplit
+from sklearn.naive_bayes import GaussianNB
+from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.preprocessing import StandardScaler, PowerTransformer
+
+
+def process_data(labeler='cont', all_indicators=True):
+    # download data
+    data = datamanipulation.retrieve()
+    data = datamanipulation.timeformatter(data)
+    data['date'] = pd.to_datetime(data.loc[:, 'date'])
+    data.set_index('date', inplace=True)
+    # calculate indicators
+    if all_indicators:
+        data = indicators.all_indicators(data)
+    data.dropna(inplace=True)
+    # label data
+    if labeler not in ('cont', '5-day'):
+        print("Data processing error: incorrect labeler")
+        exit(1)
+    # continuous trend labeling
+    if labeler == 'cont':
+        data = MLcomponents.cont_trend_label(data, w=0.008)
+    # 5-day trend labeling
+    if labeler == '5-day':
+        data_labeled = MLcomponents.five_day_centroid(data)
+        data_labeled.set_index(data.iloc[:-5, :].index, inplace=True)
+        data = data_labeled.drop(columns=['Rolling5', 'centroid'])
+        data.rename(columns={'Buy_Sell': 'Class'}, inplace=True)
+
+    return data
+
+
+def split_data(data):
+    # split into training/testing sets
+    training = data['2003-07-01':'2016-12-31']
+    testing = data['2017-01-01':]
+
+    # split into X and y sets
+    X_train = training.drop(columns='Class')
+    y_train = training['Class']
+    X_test = testing.drop(columns='Class')
+    y_test = testing['Class']
+
+    return (X_train, y_train, X_test, y_test)
+
+
+def tune_NB(pipe, X_train, y_train):
+    # define CV method and classifier
+    tscv = TimeSeriesSplit(n_splits=10)
+    # initialize parameter search values
+    parameters = {'gnb__var_smoothing': np.logspace(0, -11, num=100)}
+    # specify scoring metrics
+    scoring = ['accuracy', 'f1']
+    # use GridSearchCV to determine best parameters
+    search = GridSearchCV(estimator=pipe, param_grid=parameters, cv=tscv, scoring=scoring, refit='accuracy', n_jobs=-1)
+    # grid search to tune var_smoothing
+    search.fit(X_train, y_train)
+
+    return search
+
+
+def predict_NB(pipe, X_train, y_train, X_test):
+    # train with whole training set
+    pipe.fit(X_train, y_train)
+    # predict values for test set
+    y_pred = pipe.predict(X_test)
+    return y_pred
+
+
+def metrics_NB(y_test, y_pred):
+    # create confusion matrix and display
+    conf_mat = confusion_matrix(y_test, y_pred, labels=[1, -1])
+    # normalize confusion matrix
+    conf_mat_std = conf_mat.astype('float') / conf_mat.sum(axis=1)[:, np.newaxis]
+    print("Confusion Matrix:\n", conf_mat)
+    # print("Confusion Matrix Percentages:\n", conf_mat_std)
+    for item in (zip(['Accuracy', 'Precision', 'Recall', 'F1 Score'], [accuracy_score(y_test, y_pred),
+                                                                       precision_score(y_test, y_pred),
+                                                                       recall_score(y_test, y_pred),
+                                                                       f1_score(y_test, y_pred)])):
+        print("%s: %.3f" % item)
+    disp = ConfusionMatrixDisplay(conf_mat, display_labels=['Buy', 'Sell'])
+    disp.plot()
+    plt.show()
+
+
+def get_returns_NB(X_test, y_pred):
+    # estimate returns
+    est_ret = X_test[['open', 'high', 'low', 'close']].copy()
+    est_ret = datamanipulation.mid(est_ret)
+    est_ret.reset_index(inplace=True)
+    est_ret['Class'] = y_pred.copy()
+    returns = Validate_Analyze.estimate_returns(est_ret)
+    print(returns, "\n\n")
+
+
+def compare_transformations_NB(labels='cont'):
+    data = process_data(labeler=labels, all_indicators=True)
+    X_train, y_train, X_test, y_test = split_data(data)
+    pipes = [Pipeline(steps=[('gnb', GaussianNB())]),
+             Pipeline(steps=[('trans', StandardScaler()),('gnb', GaussianNB())]),
+             Pipeline(steps=[('trans', PowerTransformer(method='yeo-johnson')),('gnb', GaussianNB())])]
+    transformations = ['raw', 'standardized', 'yeo-johnson']
+    for i, pipe in enumerate(pipes):
+        gs = tune_NB(pipe, X_train, y_train)
+        pipe.set_params(**gs.best_params_)
+        y_pred = predict_NB(pipe, X_train, y_train, X_test)
+        print("Results for %s data transformation:" % transformations[i])
+        metrics_NB(y_test, y_pred)
+        get_returns_NB(X_test, y_pred)
+
+
+if __name__ == "__main__":
+    print("Using continuous trend labeling...")
+    compare_transformations_NB()
+    print("Using 5-day threshold labeling...")
+    compare_transformations_NB(labels='5-day')
