@@ -1,6 +1,8 @@
 '''
 Place to build functions and/or test out the program pieces and try joining them together.
 '''
+
+#Making changes
 import pandas as pd
 import numpy as np
 import indicators
