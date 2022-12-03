@@ -371,7 +371,7 @@ def evaluate_returns(idealresults, MLresults):
     print('Ideal Return Comparison: ')
     print(idealreturns)
     print('\n')
-    print('KNN Return Comparison: ')
+    print('ML Return Comparison: ')
     print(MLreturns)
 
     return idealacctdf, MLacctdf
