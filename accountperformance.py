@@ -102,7 +102,7 @@ def active_return(data):
             if indices[0] < maxindex:
                 trade.loc[indices[0] + 1, :] = data.loc[indices[0] + 1, :]
                 indices = trade.index.values.tolist()
-                print(trade)
+                # print(trade)
             # Then handle the case where the index value would exceed the available data if looking for a place to exit
             # the trade. This isn't a great way to handle, but it basically negates the trade.
             if indices[0] == maxindex:

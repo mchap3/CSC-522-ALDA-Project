@@ -48,4 +48,4 @@ MLcomponents.evaluate_confusion(idealresults, MLresults)
 idealacctdf, MLacctdf = MLcomponents.evaluate_returns(idealresults, MLresults)
 
 # Plot account value over time
-visualization.account_comparison_plot(idealacctdf, MLacctdf)
+visualization.account_comparison_plot(idealacctdf, MLacctdf, showideal=False)
