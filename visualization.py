@@ -96,9 +96,9 @@ def misc_plotter(df, y, start_date, end_date):
     data.plot(kind='line', y=y)
     plt.show()
 
-def account_comparison_plot(idealdf, MLdf):
-
-    plt.plot(idealdf['account value'], label='Ideal')
+def account_comparison_plot(idealdf, MLdf, showideal=True):
+    if showideal is True:
+        plt.plot(idealdf['account value'], label='Ideal')
     plt.plot(MLdf['account value'], label='ML')
     plt.title('Account Growth Comparison Over Time')
     plt.xlabel('Date')
