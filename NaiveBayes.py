@@ -15,6 +15,13 @@ from sklearn.preprocessing import StandardScaler, PowerTransformer
 
 
 def process_data(labeler='cont', all_indicators=True):
+    """
+    Creates and returns a dataframe of all market data with or without
+    indicators and class labels using the passed labeler method.
+    :param labeler: 'cont' or '5-day' labeling method
+    :param all_indicators: True/False
+    :return: dataframe with specified data
+    """
     # download data
     data = datamanipulation.retrieve()
     data = datamanipulation.timeformatter(data)
@@ -42,6 +49,12 @@ def process_data(labeler='cont', all_indicators=True):
 
 
 def split_data(data):
+    """
+    Split data into training and testing sets with testing set starting at
+    2017-01-01. Attribute sets (X) and labels (y) are separated for each.
+    :param data: labeled dataframe
+    :return: split data as training/testing sets
+    """
     # split into training/testing sets
     training = data['2003-07-01':'2016-12-31']
     testing = data['2017-01-01':]
@@ -56,6 +69,14 @@ def split_data(data):
 
 
 def tune_NB(pipe, X_train, y_train):
+    """
+    Find optimal smoothing parameter for Naive Bayes classifier using
+    accuracy as the metric for optimization.
+    :param pipe: scikit Pipeline
+    :param X_train: training set attribute data
+    :param y_train: training set label data
+    :return: results as a GridSearchCV object
+    """
     # define CV method and classifier
     tscv = TimeSeriesSplit(n_splits=10)
     # initialize parameter search values
@@ -71,6 +92,14 @@ def tune_NB(pipe, X_train, y_train):
 
 
 def predict_NB(pipe, X_train, y_train, X_test):
+    """
+    Make predictions using the passed optimized model.
+    :param pipe: scikit Pipeline
+    :param X_train: training set attribute data
+    :param y_train: training set label data
+    :param X_test: testing set attribute data
+    :return: ndarray with prediction values
+    """
     # train with whole training set
     pipe.fit(X_train, y_train)
     # predict values for test set
@@ -79,6 +108,11 @@ def predict_NB(pipe, X_train, y_train, X_test):
 
 
 def metrics_NB(y_test, y_pred):
+    """
+    Prints confusion matrix metrics from classification predictions.
+    :param y_test: ground-truth labels
+    :param y_pred: predicted labels
+    """
     # create confusion matrix and display
     conf_mat = confusion_matrix(y_test, y_pred, labels=[1, -1])
     # normalize confusion matrix
@@ -96,6 +130,11 @@ def metrics_NB(y_test, y_pred):
 
 
 def get_returns_NB(X_test, y_pred):
+    """
+    Prints estimated market returns using classification predictions.
+    :param X_test: testing set attribute data
+    :param y_pred: predicted labels
+    """
     # estimate returns
     est_ret = X_test[['open', 'high', 'low', 'close']].copy()
     est_ret = datamanipulation.mid(est_ret)
@@ -106,6 +145,12 @@ def get_returns_NB(X_test, y_pred):
 
 
 def compare_transformations_NB(labels='cont'):
+    """
+    Run experiments to compare which type of data pre-processing transformation
+    works best with NB classifier. Each tranformation is optimized for smoothing
+    parameter and optimal model is trained and tested.
+    :param labels: 'cont' or '5-day' labeling method
+    """
     data = process_data(labeler=labels, all_indicators=True)
     X_train, y_train, X_test, y_test = split_data(data)
     pipes = [Pipeline(steps=[('gnb', GaussianNB())]),

@@ -16,6 +16,15 @@ from sklearn.preprocessing import StandardScaler, PowerTransformer
 
 
 def tune_SVM_kernel(pipe, X_train, y_train):
+    """
+    Determine optimal kernel to use for SVM classifier. Kernels tested:
+    linear, polynomial, RBF, sigmoid. Each tested with TimeSeriesCV under
+    default kernel parameter conditions.
+    :param pipe: scikit Pipeline
+    :param X_train: training set attribute data
+    :param y_train: training set label data
+    :return: results as dataframe and GridSearchCV object
+    """
     # define CV method and classifier
     tscv = TimeSeriesSplit(n_splits=5)
     # initialize parameter search values
@@ -33,6 +42,13 @@ def tune_SVM_kernel(pipe, X_train, y_train):
 
 
 def tune_SVM_linear(pipe, X_train, y_train):
+    """
+    Determine optimal C parameter for linear kernel SVM classifier.
+    :param pipe: scikit Pipeline
+    :param X_train: training set attribute data
+    :param y_train: training set label data
+    :return: results as dataframe and GridSearchCV object
+    """
     # define CV method and classifier
     tscv = TimeSeriesSplit(n_splits=5)
     # initialize parameter search values
@@ -50,6 +66,14 @@ def tune_SVM_linear(pipe, X_train, y_train):
 
 
 def predict_SVM(pipe, X_train, y_train, X_test):
+    """
+    Make predictions using the passed optimized SVM classifier.
+    :param pipe: scikit Pipeline
+    :param X_train: training set attribute data
+    :param y_train: training set label data
+    :param X_test: testing set attribute data
+    :return: ndarray with prediction values
+    """
     # train with whole training set
     pipe.fit(X_train, y_train)
     # predict values for test set
@@ -58,6 +82,11 @@ def predict_SVM(pipe, X_train, y_train, X_test):
 
 
 def metrics_SVM(y_test, y_pred):
+    """
+    Prints confusion matrix metrics from classification predictions.
+    :param y_test: ground-truth labels
+    :param y_pred: predicted labels
+    """
     # create confusion matrix and display
     conf_mat = confusion_matrix(y_test, y_pred, labels=[1, -1])
     # normalize confusion matrix
@@ -75,6 +104,11 @@ def metrics_SVM(y_test, y_pred):
 
 
 def get_returns_SVM(X_test, y_pred):
+    """
+    Prints estimated market returns using classification predictions.
+    :param X_test: testing set attribute data
+    :param y_pred: predicted labels
+    """
     # estimate returns
     est_ret = X_test[['open', 'high', 'low', 'close']].copy()
     est_ret = datamanipulation.mid(est_ret)
@@ -85,6 +119,12 @@ def get_returns_SVM(X_test, y_pred):
 
 
 def compare_transformations_SVM(labels='cont'):
+    """
+    Run experiments to compare which type of data pre-processing transformation
+    works best with SVM classifier. Each transformation is optimized for kernel
+    selection and linear kernel hyperparameter.
+    :param labels: 'cont' or '5-day' labeling method
+    """
     data = process_data(labeler=labels, all_indicators=True)
     X_train, y_train, X_test, y_test = split_data(data)
     pipes = [Pipeline(steps=[('trans', StandardScaler()),('svc', SVC())]),
@@ -101,6 +141,12 @@ def compare_transformations_SVM(labels='cont'):
 
 
 def compare_best_SVM(labels='cont'):
+    """
+    Run experiments to compare which type of data pre-processing transformation
+    works best with SVM classifier. The optimized linear kernel SVM classifier
+    is trained and tested and compared for each transformation method.
+    :param labels: 'cont' or '5-day' labeling method
+    """
     data = process_data(labeler=labels, all_indicators=True)
     X_train, y_train, X_test, y_test = split_data(data)
     pipes = [Pipeline(steps=[('trans', StandardScaler()), ('svc', SVC())]),
