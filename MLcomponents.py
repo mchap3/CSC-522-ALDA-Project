@@ -81,7 +81,7 @@ def cont_trend_label(df, calc='close', w=0.05):
             y[j] = Cid
 
     # add labels to dataframe
-    df['Class'] = y
+    df['class'] = y
 
     return df
 
@@ -101,7 +101,7 @@ def five_day_centroid(data):
     data.Rolling5 = data.Rolling5.shift(-1 * num_rolling_days)
     data['Rolling5_Buy'] = data.Rolling5 > (data.Rolling5.shift() + minimum_delta)
     data['Rolling5_Sell'] = data.Rolling5 < (data.Rolling5.shift() - minimum_delta)
-    data['Class'] = data.Rolling5_Buy * 1 + data.Rolling5_Sell * (-1)
+    data['class'] = data.Rolling5_Buy * 1 + data.Rolling5_Sell * (-1)
 
     # Drop all rows with NaN
     data = data.dropna()
@@ -111,9 +111,9 @@ def five_day_centroid(data):
     data = data.drop('Rolling5_Buy', axis = 1)
     data = data.drop('Rolling5_Sell', axis = 1)
 
-    for current in data.loc[data['Class'] == 0].index:
+    for current in data.loc[data['class'] == 0].index:
         if current != 0:
-            data.loc[current, 'Class'] = data.loc[current - 1, 'Class']
+            data.loc[current, 'class'] = data.loc[current - 1, 'class']
 
     return data
 
