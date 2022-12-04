@@ -64,7 +64,7 @@ def cont_trend_label(df, calc='close', w=0.05):
             if X[i] < xH - xH * w and LT <= HT:
                 for j in range(len(y)):
 
-                    if j >= LT and j < HT:
+                    if j > LT and j <= HT:
 
                         y[j] = 1
                 xL, LT, Cid = X[i], i, -1
@@ -74,7 +74,7 @@ def cont_trend_label(df, calc='close', w=0.05):
             if X[i] > xL + xL * w and HT <= LT:
                 for j in range(len(y)):
 
-                    if j >= HT and j < LT:
+                    if j > HT and j <= LT:
 
                         y[j] = -1
                 xH, HT, Cid = X[i], i, 1
