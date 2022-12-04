@@ -1,8 +1,8 @@
 '''
 Place to build functions and/or test out the program pieces and try joining them together.
 '''
-import pandas as pd
 
+import pandas as pd
 import accountperformance
 import indicators
 import visualization
@@ -23,6 +23,7 @@ x_train = training[5][0]
 y_train = training[5][1]
 x_val = validation[5][0]
 y_val = validation[5][1]
+
 
 # Get testing data out
 x_test = testing[0]

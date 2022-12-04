@@ -1,5 +1,6 @@
 '''
 Place to calculate any desirable indicators to incorporate into the machine learning bot.
+
 Thinking it might be good to add quite a few... preferably one or two from each class.
 From https://www.investopedia.com/articles/active-trading/011815/top-technical-indicators-rookie-traders.asp#:~:text=In%20general%2C%20technical%20indicators%20fit,strength%2C%20volume%2C%20and%20momentum.
     5 categories of indicator:
@@ -24,6 +25,7 @@ import datamanipulation
 import numpy as np
 
 
+
 def sma(data, n=50, calc='close'):
     '''
     Calculates simple moving average.
@@ -39,6 +41,7 @@ def sma(data, n=50, calc='close'):
 
     return data
 
+  
 def ema(data, n=10, calc='close'):
     '''
     Calculates exponential moving average.
@@ -50,11 +53,13 @@ def ema(data, n=10, calc='close'):
 
     if 'time and date' in data.columns:
         data = datamanipulation.timeformatter(data)
+
     colname = 'EMA' + str(n)
     data[colname] = data[calc].ewm(span=n).mean()
 
     return data
 
+  
 def rsi(data, n=14, calc='close'):
     '''
     Calculates relative strength index.
@@ -66,6 +71,7 @@ def rsi(data, n=14, calc='close'):
     # chop up data a bit, handle formatting
     if 'time and date' in data.columns:
         data = datamanipulation.timeformatter(data)
+
     colname = 'RSI' + str(n)
     reldat = data.loc[:, [calc]]
 
@@ -96,11 +102,46 @@ def obv(data, calc='close'):
     '''
     if 'time and date' in data.columns:
         data = datamanipulation.timeformatter(data)
+
     colname = 'OBV_' + calc
     reldat = data.loc[:, [calc, 'volume']]
 
     data[colname] = (np.sign(reldat['close'].diff()) * reldat['volume']).fillna(0).cumsum()
     return data
+
+
+def centroid(data):
+    '''
+    :param data: stock data to work with
+    :return: dataframe with centroid appended (mean of open, high, low, and close)
+    '''
+
+    data['centroid'] = (data['open'] + data['high'] + data['low'] + data['close']) / 4
+
+    return data
+
+
+def simple_mov_avg(df, n=5, calc='close'):
+    """
+    Calculates simple moving average over user-defined timeframe
+    :param df: dataframe with closing price attribute
+    :param n: number of days in averaging timeframe
+    :return: df with SMA column added
+    """
+    df[f'SMA_{n}'] = df.loc[:, calc].rolling(n).mean()
+    return df
+
+
+def exp_mov_avg(df, n=5, calc='close'):
+    """
+    Calculates exponentially weighted moving average over user-defined timeframe
+    :param df: dataframe with closing price attribute
+    :param n: number of days used as averaging span
+    :return: df with EMA column added
+    """
+    df[f'EMA_{n}'] = df.loc[:, calc].ewm(span=n, adjust=False).mean()
+    return df
+
 
 def macd(data, n=12, m=26, s=9, calc='close'):
     """
@@ -125,6 +166,7 @@ def macd(data, n=12, m=26, s=9, calc='close'):
     # difference from signal line
     data['MACD_diff'] = data['MACD'] - data[f'EMA{s}']
     data.drop(columns=[f'EMA{n}', f'EMA{m}', f'EMA{s}'], inplace=True)
+
     return data
 
 
@@ -171,6 +213,7 @@ def all_indicators(data):
     data = macd(data)
     data = bollinger_bands(data)
     data = obv(data)
+    data = centroid(data)
 
     return data
 
