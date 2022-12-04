@@ -1,6 +1,7 @@
 '''
 Place for putting together machine learning functions/analyses.
 '''
+
 from scipy.signal import argrelextrema
 import numpy as np
 import pandas as pd
@@ -24,7 +25,6 @@ import matplotlib.pyplot as plt
 if not sys.warnoptions:
     import warnings
     warnings.simplefilter("ignore")
-
 
 def cont_trend_label(df, calc='close', w=0.05):
     """
@@ -63,7 +63,9 @@ def cont_trend_label(df, calc='close', w=0.05):
                 xH, HT = X[i], i
             if X[i] < xH - xH * w and LT <= HT:
                 for j in range(len(y)):
+
                     if j > LT and j <= HT:
+
                         y[j] = 1
                 xL, LT, Cid = X[i], i, -1
         if Cid < 0:
@@ -71,7 +73,9 @@ def cont_trend_label(df, calc='close', w=0.05):
                 xL, LT = X[i], i
             if X[i] > xL + xL * w and HT <= LT:
                 for j in range(len(y)):
+
                     if j > HT and j <= LT:
+
                         y[j] = -1
                 xH, HT, Cid = X[i], i, 1
 
@@ -112,6 +116,7 @@ def five_day_centroid(data):
     data = data.drop('Rolling5_Sell', axis = 1)
 
     for current in data.loc[data['class'] == 0].index:
+
         if current != 0:
             data.loc[current, 'class'] = data.loc[current - 1, 'class']
 
@@ -382,5 +387,6 @@ def evaluate_returns(idealresults, MLresults):
     #     MLresults = MLresults.iloc[:-1, :]
     # print(results.to_string())
     # print(MLresults)
+
 
 
