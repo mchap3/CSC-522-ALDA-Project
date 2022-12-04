@@ -1,9 +1,30 @@
 '''
 Place to calculate any desirable indicators to incorporate into the machine learning bot.
+
+Thinking it might be good to add quite a few... preferably one or two from each class.
+From https://www.investopedia.com/articles/active-trading/011815/top-technical-indicators-rookie-traders.asp#:~:text=In%20general%2C%20technical%20indicators%20fit,strength%2C%20volume%2C%20and%20momentum.
+    5 categories of indicator:
+        trend indicators
+        mean reversion
+        relative strength
+        momentum
+        volume
+    and each category can be subdivided into leading and lagging:
+        leading attempt to predict where price is going
+        lagging offer a historical perspective
+    a few examples
+        1) moving averages: trend indicators, lagging
+        2) bollinger bands: mean reversion indicator, lagging
+        3) stochastic RSI: relative strength indicator, leading
+        4) MACD: momentum indicator, generally lagging, sometimes leading
+        5) on-balance volume: volume indicator, leading
 '''
 
-from datamanipulation import *
+import pandas as pd
+import datamanipulation
 import numpy as np
+
+
 
 def sma(data, n=50, calc='close'):
     '''
@@ -20,7 +41,7 @@ def sma(data, n=50, calc='close'):
 
     return data
 
-
+  
 def ema(data, n=10, calc='close'):
     '''
     Calculates exponential moving average.
@@ -31,13 +52,14 @@ def ema(data, n=10, calc='close'):
     '''
 
     if 'time and date' in data.columns:
-        data = timeformatter(data)
+        data = datamanipulation.timeformatter(data)
+
     colname = 'EMA' + str(n)
     data[colname] = data[calc].ewm(span=n).mean()
 
     return data
 
-
+  
 def rsi(data, n=14, calc='close'):
     '''
     Calculates relative strength index.
@@ -48,7 +70,8 @@ def rsi(data, n=14, calc='close'):
     '''
     # chop up data a bit, handle formatting
     if 'time and date' in data.columns:
-        data = timeformatter(data)
+        data = datamanipulation.timeformatter(data)
+
     colname = 'RSI' + str(n)
     reldat = data.loc[:, [calc]]
 
@@ -78,7 +101,8 @@ def obv(data, calc='close'):
     :return: original data frame with on balance volume values appended
     '''
     if 'time and date' in data.columns:
-        data = timeformatter(data)
+        data = datamanipulation.timeformatter(data)
+
     colname = 'OBV_' + calc
     reldat = data.loc[:, [calc, 'volume']]
 
@@ -132,16 +156,17 @@ def macd(data, n=12, m=26, s=9, calc='close'):
     :return: dataframe with MACD attributes added
     """
     # calculate fast/slow EMAs
-    data = exp_mov_avg(data, n, calc)
-    data = exp_mov_avg(data, m, calc)
-    data['MACD'] = data[f'EMA_{n}'] - data[f'EMA_{m}']
+    data = ema(data, n, calc)
+    data = ema(data, m, calc)
+    data['MACD'] = data[f'EMA{n}'] - data[f'EMA{m}']
 
     # create signal line from above
-    exp_mov_avg(data, s, 'MACD')
+    ema(data, s, 'MACD')
 
     # difference from signal line
-    data['MACD_diff'] = data['MACD'] - data[f'EMA_{s}']
-    data.drop(columns=[f'EMA_{n}', f'EMA_{m}', f'EMA_{s}'], inplace=True)
+    data['MACD_diff'] = data['MACD'] - data[f'EMA{s}']
+    data.drop(columns=[f'EMA{n}', f'EMA{m}', f'EMA{s}'], inplace=True)
+
     return data
 
 
@@ -172,10 +197,9 @@ def all_indicators(data):
     Calls the following functions to make a combined df: ema(n = 10), ema(n = 25), ema(n = 50), sma(n = 100),
     sma(n = 200), rsi(n = 3), rsi(n = 14), macd(), bollinger_bands(), obv(), and centroid().
     Will also include, open, high, low, close, and volume from retrieve().
-
     :param data: dataframe with stock price data
     :return: dataframe with the following attributes and classifications added: ['open', 'high', 'low', 'close',
-    'volume', 'date', 'EMA10', 'EMA25', 'EMA50', 'SMA100', 'SMA200', 'RSI3', 'SMA14', 'MACD', 'MACD_diff',
+    'volume', 'date', 'EMA10', 'EMA25', 'EMA50', 'SMA100', 'SMA200', 'RSI3', 'RSI14', 'MACD', 'MACD_diff',
     'BOLU', 'BOLD', 'OBV_close', 'centroid', 'Rolling5']
     """
 
@@ -185,10 +209,11 @@ def all_indicators(data):
     data = sma(data, n=100)
     data = sma(data, n=200)
     data = rsi(data, n=3)
-    data = sma(data, n=14)
+    data = rsi(data, n=14)
     data = macd(data)
     data = bollinger_bands(data)
     data = obv(data)
     data = centroid(data)
 
     return data
+
