@@ -1,9 +1,28 @@
 '''
 Place to calculate any desirable indicators to incorporate into the machine learning bot.
+Thinking it might be good to add quite a few... preferably one or two from each class.
+From https://www.investopedia.com/articles/active-trading/011815/top-technical-indicators-rookie-traders.asp#:~:text=In%20general%2C%20technical%20indicators%20fit,strength%2C%20volume%2C%20and%20momentum.
+    5 categories of indicator:
+        trend indicators
+        mean reversion
+        relative strength
+        momentum
+        volume
+    and each category can be subdivided into leading and lagging:
+        leading attempt to predict where price is going
+        lagging offer a historical perspective
+    a few examples
+        1) moving averages: trend indicators, lagging
+        2) bollinger bands: mean reversion indicator, lagging
+        3) stochastic RSI: relative strength indicator, leading
+        4) MACD: momentum indicator, generally lagging, sometimes leading
+        5) on-balance volume: volume indicator, leading
 '''
 
+import pandas as pd
 import datamanipulation
 import numpy as np
+
 
 def sma(data, n=50, calc='close'):
     '''
@@ -20,7 +39,6 @@ def sma(data, n=50, calc='close'):
 
     return data
 
-
 def ema(data, n=10, calc='close'):
     '''
     Calculates exponential moving average.
@@ -36,7 +54,6 @@ def ema(data, n=10, calc='close'):
     data[colname] = data[calc].ewm(span=n).mean()
 
     return data
-
 
 def rsi(data, n=14, calc='close'):
     '''
@@ -85,71 +102,6 @@ def obv(data, calc='close'):
     data[colname] = (np.sign(reldat['close'].diff()) * reldat['volume']).fillna(0).cumsum()
     return data
 
-
-def centroid(data):
-    '''
-    :param data: stock data to work with
-    :return: dataframe with centroid appended (mean of open, high, low, and close)
-    '''
-
-    data['centroid'] = (data['open'] + data['high'] + data['low'] + data['close']) / 4
-
-    return data
-
-
-def five_day_centroid(data):
-    '''
-    Runs a 5-day moving average of the Centroid and then classifies as 1 (buy) or -1 (sell)
-    if the 5-day average changed by more than the threshold.
-    :param data: stock data to work with
-    :return: dataframe with columns for five-day average, buy, sell, and Buy_Sell appended
-    '''
-
-    data = centroid(data)
-    minimum_delta = .25
-    num_rolling_days = 3
-    data['Rolling5'] = data['centroid'].rolling(num_rolling_days).mean()
-    data.Rolling5 = data.Rolling5.shift(-1 * num_rolling_days)
-    data['Rolling5_Buy'] = data.Rolling5 > (data.Rolling5.shift() + minimum_delta)
-    data['Rolling5_Sell'] = data.Rolling5 < (data.Rolling5.shift() - minimum_delta)
-    data['Buy_Sell'] = data.Rolling5_Buy * 1 + data.Rolling5_Sell * (-1)
-
-    # Drop all rows with NaN
-    data = data.dropna()
-    # Reset row numbers
-    data = data.reset_index(drop=True)
-    # Remove unneeded columns
-    data = data.drop('Rolling5_Buy', axis = 1)
-    data = data.drop('Rolling5_Sell', axis = 1)
-
-    for current in data.loc[data['Buy_Sell'] == 0].index:
-        if current != 0:
-            data.loc[current, 'Buy_Sell'] = data.loc[current - 1, 'Buy_Sell']
-
-    return data
-
-def simple_mov_avg(df, n=5, calc='close'):
-    """
-    Calculates simple moving average over user-defined timeframe
-    :param df: dataframe with closing price attribute
-    :param n: number of days in averaging timeframe
-    :return: df with SMA column added
-    """
-    df[f'SMA_{n}'] = df.loc[:, calc].rolling(n).mean()
-    return df
-
-
-def exp_mov_avg(df, n=5, calc='close'):
-    """
-    Calculates exponentially weighted moving average over user-defined timeframe
-    :param df: dataframe with closing price attribute
-    :param n: number of days used as averaging span
-    :return: df with EMA column added
-    """
-    df[f'EMA_{n}'] = df.loc[:, calc].ewm(span=n, adjust=False).mean()
-    return df
-
-
 def macd(data, n=12, m=26, s=9, calc='close'):
     """
     Calculates Moving Average Convergence/Divergence oscillator. Indicates momentum
@@ -163,16 +115,16 @@ def macd(data, n=12, m=26, s=9, calc='close'):
     :return: dataframe with MACD attributes added
     """
     # calculate fast/slow EMAs
-    data = exp_mov_avg(data, n, calc)
-    data = exp_mov_avg(data, m, calc)
-    data['MACD'] = data[f'EMA_{n}'] - data[f'EMA_{m}']
+    data = ema(data, n, calc)
+    data = ema(data, m, calc)
+    data['MACD'] = data[f'EMA{n}'] - data[f'EMA{m}']
 
     # create signal line from above
-    exp_mov_avg(data, s, 'MACD')
+    ema(data, s, 'MACD')
 
     # difference from signal line
-    data['MACD_diff'] = data['MACD'] - data[f'EMA_{s}']
-    data.drop(columns=[f'EMA_{n}', f'EMA_{m}', f'EMA_{s}'], inplace=True)
+    data['MACD_diff'] = data['MACD'] - data[f'EMA{s}']
+    data.drop(columns=[f'EMA{n}', f'EMA{m}', f'EMA{s}'], inplace=True)
     return data
 
 
@@ -201,14 +153,11 @@ def bollinger_bands(data, n=20, m=2):
 def all_indicators(data):
     """
     Calls the following functions to make a combined df: ema(n = 10), ema(n = 25), ema(n = 50), sma(n = 100),
-    sma(n = 200), rsi(n = 3), rsi(n = 14), macd(), bollinger_bands(), obv(), centroid(), and moving_centroid().
     sma(n = 200), rsi(n = 3), rsi(n = 14), macd(), bollinger_bands(), obv(), and centroid().
     Will also include, open, high, low, close, and volume from retrieve().
-
     :param data: dataframe with stock price data
     :return: dataframe with the following attributes and classifications added: ['open', 'high', 'low', 'close',
-    'volume', 'date', 'EMA10', 'EMA25', 'EMA50', 'SMA100', 'SMA200', 'RSI3', 'SMA14', 'MACD', 'MACD_diff',
-    'BOLU', 'BOLD', 'OBV_close', 'centroid', 'Rolling5', and 'Buy_Sell']
+    'volume', 'date', 'EMA10', 'EMA25', 'EMA50', 'SMA100', 'SMA200', 'RSI3', 'RSI14', 'MACD', 'MACD_diff',
     'BOLU', 'BOLD', 'OBV_close', 'centroid', 'Rolling5']
     """
 
@@ -218,12 +167,10 @@ def all_indicators(data):
     data = sma(data, n=100)
     data = sma(data, n=200)
     data = rsi(data, n=3)
-    data = sma(data, n=14)
+    data = rsi(data, n=14)
     data = macd(data)
     data = bollinger_bands(data)
     data = obv(data)
-    data = centroid(data)
-    data = five_day_centroid(data)
 
     return data
 

@@ -5,7 +5,7 @@ A file for backtesting results, analyzing our data outputs, etc.
 
 import datamanipulation
 import indicators
-import MLcomponents
+# import MLcomponents
 import pandas as pd
 import numpy as np
 import math
@@ -16,21 +16,6 @@ if not sys.warnoptions:
     import warnings
     warnings.simplefilter("ignore")
 
-dailydf = datamanipulation.retrieve()
-dailydf = datamanipulation.centroid(dailydf)
-dailydf = datamanipulation.center(dailydf)
-dailydf = datamanipulation.mid(dailydf)
-dailydf = datamanipulation.timeformatter(dailydf)
-
-start_date = '2002-01-01'
-end_date = '2012-01-01'
-mask = (dailydf['date'] >= start_date) & (dailydf['date'] <= end_date)
-data = dailydf.loc[mask]
-# print(data.to_string())
-# check = MLcomponents.cont_trend_label(data, w=0.02)
-# print(check.to_string())
-# data = MLcomponents.cont_trend_label(data, w=0.02)
-# data = MLcomponents.moving_centroid(data)
 
 
 def maxdrawdown_long(data):
@@ -93,7 +78,8 @@ def active_return(data):
     '''
     initial_capital = 10000
     # First thing is to split the classed dataframe into trades
-    data['trade'] = data['Class'].ne(data['Class'].shift()).cumsum()
+    data['trade'] = data['class'].ne(data['class'].shift()).cumsum()
+    maxindex = max(data.index.values.tolist())
     df = data.groupby('trade')
     trades = []
     for name, value in df:
@@ -101,88 +87,113 @@ def active_return(data):
 
     # Now basically run the same things as the base case in estimate returns here, keep everything in a list of lists
     tradesummaries = []
+    acctdata = []
     i = 1
+
+    # Iterate over each trade and determine results for each of them
     for trade in trades:
-        # print('Trade: ' + str(i))
+
         entry = []
         indices = trade.index.values.tolist()
-        # print(indices)
-        # cl = trade.loc[[indices[0]], 'Class']
-        # if cl.values[0] == 1.0:
-        #     buy = True
-        #     print('Buy')
-        # else:
-        #     buy = False
-        #     print('Sell')
-        maxindex = max(data.index.values.tolist())
-        # if len(indices) == 1 & (indices[0] + 1) < maxindex:
+
+        # Handle special cases first, mostly arising from a single day being assigned a particular class
         if len(indices) == 1:
-            trade.loc[indices[0] + 1] = data.loc[indices[0] + 1]
-            indices = trade.index.values.tolist()
-        # print(indices)
+            # Handle the first case of there being a single trade, but more data to follow
+            if indices[0] < maxindex:
+                trade.loc[indices[0] + 1, :] = data.loc[indices[0] + 1, :]
+                indices = trade.index.values.tolist()
+                print(trade)
+            # Then handle the case where the index value would exceed the available data if looking for a place to exit
+            # the trade. This isn't a great way to handle, but it basically negates the trade.
+            if indices[0] == maxindex:
+                # idx = indices[0]
+                # trade.loc[indices[0] + 1] = trade.loc[indices[0]]
+                # trade.reset_index(inplace=True)
+                # trade.rename(index={0: idx, 1: idx + 1})
+                # indices = trade.index.values.tolist()
+                break
+
+        # print(trade.to_string())
 
         # Determine class to do calcs for long vs short
-        cl = trade.loc[[indices[0]], 'Class']
+        cl = trade.loc[[indices[0]], 'class']
+
         if cl.values[0] == 1.0:
             buy = True
-            # print('Buy')
         else:
             buy = False
-            # print('Sell')
 
+        # Perform buy-side trade calculations
         if buy:
             buyprice = data.loc[indices[0], 'mid']
-            # print('Entry Price: ' + str(buyprice))
             nshares = math.floor(initial_capital / buyprice)
-            # print('Shares Traded: ' + str(nshares))
             buyval = round(buyprice * nshares, 2)
-            # print('Trade Entry Cost: ' + str(buyval))
+            cashbal = initial_capital - buyval
             sellprice = data.loc[indices[len(indices) - 1], 'mid']
-            # print('Exit Price: ', str(sellprice))
             sellval = round(nshares * sellprice, 2)
-            # print('Trade Closing Value: ' + str(sellval))
             realreturn = round(sellval - buyval, 2)
-            # print('Realized Return: ', str(realreturn))
             pctreturn = round(((sellval - buyval) / buyval) * 100, 2)
-            # print('Percentage Return: ', str(pctreturn))
             mdd = maxdrawdown_long(trade)
-            # print('Max Drawdown: ', str(mdd))
             final_capital = round(initial_capital + realreturn, 2)
             entry.append(initial_capital)
             entry.append(final_capital)
             entry.append(realreturn)
             entry.append(pctreturn)
             entry.append(mdd)
+            trade['initial value'] = initial_capital
+            trade['account value'] = (trade['close'] * nshares) + cashbal
+            trade.loc[trade.index.values[len(trade.index.values) - 1], 'account value'] = final_capital
+            trade['cash balance'] = cashbal
+            trade['nshares'] = nshares
+            # print(trade.to_string())
+            acctdataentry = trade.get(['date', 'account value', 'trade'])
             initial_capital = final_capital
-            # print('Capital Remaining: ', str(initial_capital))
+
+        # Perform sell-side trade calculations
         if not buy:
             sellprice = data.loc[indices[0], 'mid']
-            # print('Entry Price: ' + str(sellprice))
             nshares = math.floor((initial_capital / 2) / sellprice)
-            # print('Shares Traded: ' + str(nshares))
             sellval = round(nshares * sellprice, 2)
-            # print('Trade Entry Cost: ' + str(sellval))
+            cashbal = initial_capital - sellval
             buyprice = data.loc[indices[len(indices) - 1], 'mid']
-            # print('Exit Price: ', str(buyprice))
             buyval = round(nshares * buyprice, 2)
-            # print('Trade Closing Value: ' + str(buyval))
             realreturn = round(sellval-buyval, 2)
-            # print('Realized Return: ', str(realreturn))
             pctreturn = round(((sellval - buyval) / buyval) * 100, 2)
-            # print('Percentage Return: ', str(pctreturn))
             mdd = maxdrawdown_short(trade)
-            # print('Max Drawdown: ', str(mdd))
             final_capital = round(initial_capital + realreturn, 2)
             entry.append(initial_capital)
             entry.append(final_capital)
             entry.append(realreturn)
             entry.append(pctreturn)
             entry.append(mdd)
+            trade['initial value'] = initial_capital
+            trade['change'] = trade['close'].diff()
+            trade.loc[indices[0], 'change'] = trade.loc[indices[0], 'close'] - trade.loc[indices[0], 'mid']
+            trade['P/L'] = trade.change * nshares * -1
+            trade['account value'] = (trade['close'] * nshares) + cashbal
+            trade['cash balance'] = cashbal
+            trade['nshares'] = nshares
+
+            # Calculate next account value for short trade
+            for i in range(0, len(trade.index.values)):
+                if i == 0:
+                    trade.loc[indices[i], 'actual account value'] = trade.loc[indices[i], 'account value'] + \
+                                                                    trade.loc[indices[i], 'P/L']
+                elif (i > 0) and (i < (len(trade.index.values) - 1)):
+                    trade.loc[indices[i], 'actual account value'] = trade.loc[indices[i-1], 'actual account value'] + \
+                                                                    trade.loc[indices[i], 'P/L']
+                else:
+                    trade.loc[indices[i], 'actual account value'] = final_capital
+
+            acctdataentry = trade.get(['date', 'actual account value', 'trade'])
+            acctdataentry.rename(columns={'actual account value': 'account value'}, inplace=True)
             initial_capital = final_capital
-            # print('Capital Remaining: ', str(initial_capital))
+
+        acctdata.append(acctdataentry)
         tradesummaries.append(entry)
         i += 1
-    return tradesummaries
+
+    return tradesummaries, acctdata
 
 
 def estimate_returns(data):
@@ -219,7 +230,8 @@ def estimate_returns(data):
     summary['buy and hold'] = [realreturn, pctreturn, mdd, 'NA']
 
     # Call active_return to get data for each trade, aggregate that into a timeframe stat here
-    activedata = active_return(data)
+    activedata, acctdata = active_return(data)
+    # print(activedata)
     realreturn = round(activedata[-1][1] - activedata[0][0], 2)
     pctreturn = round(((activedata[-1][1] - activedata[0][0]) / activedata[0][0]) * 100, 2)
     mddlist = []
@@ -234,13 +246,16 @@ def estimate_returns(data):
     summary[keyname] = [realreturn, pctreturn, mdd, avg_gain]
 
     summarydf = pd.DataFrame.from_dict(summary)
+    acctvaldf = pd.concat(acctdata)
+    acctvaldf.set_index('date', inplace=True)
 
-    return summarydf
+
+    return summarydf, acctvaldf
 
 
 # cont = estimate_returns(MLcomponents.cont_trend_label(data, w=0.1), method='cont_trend_label')
-# mov = estimate_returns(MLcomponents.moving_centroid(data), method='moving_centroid')
-# cont['active: moving_centroid'] = mov['active: moving_centroid']
+# mov = estimate_returns(MLcomponents.five_day_centroid(data), method='five_day_centroid')
+# cont['active: five_day_centroid'] = mov['active: five_day_centroid']
 # cont.rename(columns={'summary': 'summary: w=0.1'}, inplace=True)
 # cont.set_index('summary: w=0.1', inplace=True)
 # print(cont.to_string())
@@ -258,13 +273,18 @@ def estimate_returns(data):
 # data1 = dailydf.loc[mask1]
 # data2 = dailydf.loc[mask2]
 # data3 = dailydf.loc[mask3]
-#
+# print(data1)
+# datadf = pd.DataFrame(pd.read_excel('sample prediction.xlsx'))
+# datadf = datamanipulation.mid(datadf)
+# summaries = estimate_returns(datadf)
+# print(summaries)
+
 # results = []
 # for num in range(5, 50, 1):
 #     entry = []
 #     w = num / 1000
 #     entry.append(w)
-#     data1 = cont_trend_label(data1, w=w)
+#     data1 = MLcomponents.cont_trend_label(data1, w=w)
 #     summaries = estimate_returns(data1)
 #     entry.append(summaries.iloc[0, 2])
 #     results.append(entry)
@@ -298,7 +318,7 @@ def estimate_returns(data):
 # summary1['real return 2007-2017'] = summary2['real return 2007-2017']
 # summary1['real return 2011-2021'] = summary3['real return 2011-2021']
 # summary1.set_index('w parameter', inplace=True)
-#
+
 # fig, ax1 = plt.subplots()
 # ax1.plot(summary1['real return 2002-2012'])
 # ax1.plot(summary1['real return 2007-2017'])
@@ -307,10 +327,10 @@ def estimate_returns(data):
 # ax1.set_xlabel('w')
 # plt.title('Real Decade Stock Returns vs. w Parameter')
 # plt.legend(['2002-2012', '2007-2017', '2011-2021'])
-# # plt.show()
-#
-# # print(summary1.to_string())
-# # summaries = estimate_returns(data, w=0.02)
-# # print(results)
+# plt.show()
+
+# print(summary1.to_string())
+# summaries = estimate_returns(data, w=0.02)
+# print(results)
 
 
