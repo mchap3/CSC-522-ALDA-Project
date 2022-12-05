@@ -8,6 +8,7 @@ import datamanipulation
 # import mplfinance as mpl
 from matplotlib import pyplot as plt
 import MLcomponents
+import matplotlib.dates as mdates
 
 
 dailydf = datamanipulation.retrieve()
@@ -99,9 +100,22 @@ def misc_plotter(df, y, start_date, end_date):
 def account_comparison_plot(idealdf, MLdf, showideal=True):
     if showideal is True:
         plt.plot(idealdf['account value'], label='Ideal')
-    plt.plot(MLdf['account value'], label='ML')
+
+    years = mdates.YearLocator()
+    months = mdates.MonthLocator()
+    yearsFmt = mdates.DateFormatter('%Y')
+    MLdf.reset_index(inplace=True)
+    MLdf['date'] = MLdf['date'].astype('datetime64[ns]')
+
+    fig, ax = plt.subplots()
+
     plt.title('Account Growth Comparison Over Time')
     plt.xlabel('Date')
     plt.ylabel('Account Value ($)')
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(mdates.AutoDateLocator()))
+    # ax.axis.set_minor_locator(months)
+    ax.plot(MLdf['date'], MLdf['account value'], label='ML')
     plt.legend()
+    plt.tight_layout()
     plt.show()

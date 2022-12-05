@@ -18,6 +18,7 @@ from sklearn.model_selection import RandomizedSearchCV
 import sys
 import tensorflow as tf
 from tensorflow import keras
+from keras.callbacks import EarlyStopping
 import accountperformance
 import matplotlib.pyplot as plt
 
@@ -132,6 +133,8 @@ def data_processor(data):
     y = modeldata.iloc[:, (modeldata.shape[1] - 1)]
     x_test = x[x.index >= '2017-01-01']
     y_test = y[y.index >= '2017-01-01']
+    x = x[x.index < '2017-01-01']
+    y = y[y.index < '2017-01-01']
     # tscv = TimeSeriesSplit(n_splits=10, max_train_size=(math.ceil(0.6 * modeldata.shape[0])))
     tscv = TimeSeriesSplit(n_splits=10)
     training = []
@@ -203,22 +206,24 @@ def KNN_prediction(x_train, y_train, x_test, n_neighbors=2):
     return results
 
 
-def RF_prediction(x_train, y_train, x_test):
+def RF_prediction(x_train, y_train, x_test, n_estimators=100, maxdepth=None):
     """
     Builds Random Forest classification model with training data and returns a prediction array.
     :param x_train: training data input
     :param y_train: training data target
     :param x_test: testing data input
+    :param n_estimators: parameter for random forest
     :return: prediction results as dataframe
     """
-    model = RandomForestClassifier()
+    model = RandomForestClassifier(n_estimators=n_estimators, max_depth=maxdepth)
     model.fit(x_train, y_train)
     results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
 
     return results
 
 
-def ANN_prediction(x_train, y_train, x_val, y_val, x_test):
+def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=200, dropout1=0.75,
+                   dropout2=0.25, epochs=20, es=False):
     """
 
     :param x_train:
@@ -233,7 +238,7 @@ def ANN_prediction(x_train, y_train, x_val, y_val, x_test):
     output_neurons = 1
 
     # Set variables
-    epochs = 50
+    epochs = epochs
     hidden_act = 'relu'
     out_act = 'sigmoid'
     loss = 'binary_crossentropy'
@@ -253,24 +258,29 @@ def ANN_prediction(x_train, y_train, x_val, y_val, x_test):
     # model = keras.Model(inputs=inputs, outputs=output)
     # model.compile(optimizer=optim, loss=loss, metrics=metrics)
     # model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
-    model = keras.Sequential([keras.layers.Dense(32, activation=hidden_act, input_shape=(input_neurons,)),
+    model = keras.Sequential([keras.layers.Dense(hidden1, activation=hidden_act, input_dim=input_neurons),
                               keras.layers.Activation('relu'),
-                              keras.layers.Dropout(.75),
-                              keras.layers.Dense(250, activation=hidden_act),
+                              keras.layers.Dropout(dropout1),
+                              keras.layers.Dense(hidden, activation=hidden_act),
                               keras.layers.Activation('relu'),
-                              keras.layers.Dense(250, activation=hidden_act),
-                              keras.layers.Dropout(.2),
+                              keras.layers.Dense(hidden, activation=hidden_act),
+                              keras.layers.Dropout(dropout2),
                               keras.layers.Activation('relu'),
-                              keras.layers.Dense(100, activation=hidden_act),
+                              keras.layers.Dense(hidden, activation=hidden_act),
                               keras.layers.Activation('relu'),
                               keras.layers.Dense(output_neurons, activation=out_act, name='predictions')])
 
     model.compile(optimizer=optim, loss=loss, metrics=metrics)
-    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
+    if es:
+        early_stopping = EarlyStopping(patience=2, restore_best_weights=True)
+        history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val),
+                  callbacks=[early_stopping])
+    else:
+        history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
 
     results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
 
-    return results
+    return results, history
 
 
 def assemble_results(y_pred, y_test, original):
