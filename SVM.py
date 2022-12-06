@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import datamanipulation
 import indicators
 import MLcomponents
-import Validate_Analyze
+import accountperformance
 from NaiveBayes import *
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.svm import SVC
@@ -113,9 +113,9 @@ def get_returns_SVM(X_test, y_pred):
     est_ret = X_test[['open', 'high', 'low', 'close']].copy()
     est_ret = datamanipulation.mid(est_ret)
     est_ret.reset_index(inplace=True)
-    est_ret['Class'] = y_pred.copy()
-    returns = Validate_Analyze.estimate_returns(est_ret)
-    print(returns, "\n\n")
+    est_ret['class'] = y_pred.copy()
+    returns = accountperformance.estimate_returns(est_ret)
+    print(returns[0], "\n\n")
 
 
 def compare_transformations_SVM(labels='cont'):
@@ -140,20 +140,21 @@ def compare_transformations_SVM(labels='cont'):
         print(results)
 
 
-def compare_best_SVM(labels='cont'):
+def compare_best_SVM(labels='cont', indicators=True):
     """
     Run experiments to compare which type of data pre-processing transformation
     works best with SVM classifier. The optimized linear kernel SVM classifier
     is trained and tested and compared for each transformation method.
     :param labels: 'cont' or '5-day' labeling method
     """
-    data = process_data(labeler=labels, all_indicators=True)
+    data = process_data(labeler=labels, all_indicators=indicators)
     X_train, y_train, X_test, y_test = split_data(data)
     pipes = [Pipeline(steps=[('trans', StandardScaler()), ('svc', SVC())]),
              Pipeline(steps=[('trans', PowerTransformer(method='yeo-johnson')), ('svc', SVC())])]
     transformations = ['standardized', 'yeo-johnson']
+    best_params = [10, 0.1]
     for i, pipe in enumerate(pipes):
-        pipe.set_params(svc__kernel='linear')
+        pipe.set_params(svc__kernel='linear', svc__C=best_params[i])
         print("Best SVM for %s data transformation:" % transformations[i])
         y_pred = predict_SVM(pipe, X_train, y_train, X_test)
         metrics_SVM(y_test, y_pred)
@@ -162,8 +163,14 @@ def compare_best_SVM(labels='cont'):
 
 if __name__ == "__main__":
     print("Using continuous trend labeling...")
+    # for optimization experiments
     # compare_transformations_SVM()
+    # for optimal model comparison
     compare_best_SVM()
-    print("Using 5-day threshold labeling...")
+    # compare_best_SVM(indicators=False)
+
+    # print("Using 5-day threshold labeling...")
+    # for optimization experiments
     # compare_transformations_SVM(labels='5-day')
-    compare_best_SVM(labels='5-day')
+    # for optimal model comparison
+    # compare_best_SVM(labels='5-day')

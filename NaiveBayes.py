@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import datamanipulation
 import indicators
 import MLcomponents
-import Validate_Analyze
+import accountperformance
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import GridSearchCV
@@ -41,9 +41,9 @@ def process_data(labeler='cont', all_indicators=True):
     # 5-day trend labeling
     if labeler == '5-day':
         data_labeled = MLcomponents.five_day_centroid(data)
-        data_labeled.set_index(data.iloc[:-5, :].index, inplace=True)
+        data_labeled.set_index(data.iloc[:-3, :].index, inplace=True)
         data = data_labeled.drop(columns=['Rolling5', 'centroid'])
-        data.rename(columns={'Buy_Sell': 'Class'}, inplace=True)
+        data.rename(columns={'Buy_Sell': 'class'}, inplace=True)
 
     return data
 
@@ -56,14 +56,14 @@ def split_data(data):
     :return: split data as training/testing sets
     """
     # split into training/testing sets
-    training = data['2003-07-01':'2016-12-31']
+    training = data['2003-07-01':'2013-12-29']
     testing = data['2017-01-01':]
 
     # split into X and y sets
-    X_train = training.drop(columns='Class')
-    y_train = training['Class']
-    X_test = testing.drop(columns='Class')
-    y_test = testing['Class']
+    X_train = training.drop(columns='class')
+    y_train = training['class']
+    X_test = testing.drop(columns='class')
+    y_test = testing['class']
 
     return (X_train, y_train, X_test, y_test)
 
@@ -139,9 +139,9 @@ def get_returns_NB(X_test, y_pred):
     est_ret = X_test[['open', 'high', 'low', 'close']].copy()
     est_ret = datamanipulation.mid(est_ret)
     est_ret.reset_index(inplace=True)
-    est_ret['Class'] = y_pred.copy()
-    returns = Validate_Analyze.estimate_returns(est_ret)
-    print(returns, "\n\n")
+    est_ret['class'] = y_pred.copy()
+    returns = accountperformance.estimate_returns(est_ret)
+    print(returns[0], "\n\n")
 
 
 def compare_transformations_NB(labels='cont'):
@@ -158,16 +158,35 @@ def compare_transformations_NB(labels='cont'):
              Pipeline(steps=[('trans', PowerTransformer(method='yeo-johnson')),('gnb', GaussianNB())])]
     transformations = ['raw', 'standardized', 'yeo-johnson']
     for i, pipe in enumerate(pipes):
+        print("Results for %s data transformation:" % transformations[i])
         gs = tune_NB(pipe, X_train, y_train)
+        print(gs.best_params_)
         pipe.set_params(**gs.best_params_)
         y_pred = predict_NB(pipe, X_train, y_train, X_test)
-        print("Results for %s data transformation:" % transformations[i])
         metrics_NB(y_test, y_pred)
         get_returns_NB(X_test, y_pred)
 
 
 if __name__ == "__main__":
-    print("Using continuous trend labeling...")
-    compare_transformations_NB()
-    print("Using 5-day threshold labeling...")
-    compare_transformations_NB(labels='5-day')
+    # for optimization experiments
+    # print("Using continuous trend labeling...")
+    # compare_transformations_NB()
+    # print("Using 5-day threshold labeling...")
+    # compare_transformations_NB(labels='5-day')
+
+    # for optimal model results
+    data = process_data(labeler='cont', all_indicators=True)
+    # data = process_data(labeler='cont', all_indicators=False)
+    X_train, y_train, X_test, y_test = split_data(data)
+    pipe = Pipeline(steps=[('trans', StandardScaler()),('gnb', GaussianNB(var_smoothing=0.02782559402207126))])
+    y_pred = predict_NB(pipe, X_train, y_train, X_test)
+    metrics_NB(y_test, y_pred)
+    get_returns_NB(X_test, y_pred)
+    # x_trans = pipe[0].fit_transform(X_train, y_train)
+    # x_test = pipe[0].transform(X_test)
+    # print(pd.DataFrame(x_trans))
+    #
+    # print(pd.DataFrame(y_pred))
+    # y_train, _, _ = MLcomponents.y_cleaner(y_train, y_train, y_train)
+    # print(pd.DataFrame(y_train).head())
+
