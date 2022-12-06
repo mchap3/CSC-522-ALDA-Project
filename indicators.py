@@ -1,3 +1,5 @@
+#Making changes
+
 '''
 Place to calculate any desirable indicators to incorporate into the machine learning bot.
 Thinking it might be good to add quite a few... preferably one or two from each class.
