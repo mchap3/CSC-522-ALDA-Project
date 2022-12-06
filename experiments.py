@@ -164,8 +164,6 @@ def RF_optimization():
     # List of max depths to test
     depthvals = [10, 25, 50, 100, 250, 500, 1000, None]
 
-
-
     # Iterate over each fold
     for i in range(len(training)):
         x_train = training[i][0]
@@ -431,14 +429,6 @@ def ann_regularization():
     Function to optimize number of training epochs to prevent overfitting.
     :return: Nothing, prints a graph
     """
-    # Set seed for reproducibility
-    seed = 2022
-    import os
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    import random
-    random.seed(seed)
-    np.random.seed(seed)
-    tf.random.set_seed(seed)
 
     # Initialize everything as in other trials
     dailydf = datamanipulation.retrieve()
@@ -464,22 +454,50 @@ def ann_regularization():
     # Clean up y values with y_cleaner
     y_train, y_val, y_test = MLcomponents.y_cleaner(y_train, y_val, y_test)
 
-    y_pred, history = MLcomponents.ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100,
+    # Initialize counter for while loop to average results with no seed
+    i = 0
+
+    # Generate epoch list for x-axis of plots and for dataframe columns
+    epochs = [i for i in range(1, 51, 1)]
+
+    # initialize dataframes to capture results
+    trainaccdf = pd.DataFrame(columns=epochs)
+    valaccdf = pd.DataFrame(columns=epochs)
+    trainlossdf = pd.DataFrame(columns=epochs)
+    vallossdf = pd.DataFrame(columns=epochs)
+
+    # 25 trials to get average loss/accuracy values across stochastic runs
+    while i < 25:
+        # Make prediction
+        y_pred, history = MLcomponents.ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100,
                                                       dropout1=0.1, dropout2=0.5, epochs=50)
 
-    trainacc = history.history['accuracy']
-    valacc = history.history['val_accuracy']
-    trainloss = history.history['loss']
-    valloss = history.history['val_loss']
-    epochs = [i for i in range(1, 51, 1)]
+        # Grab training results
+        trainacc = history.history['accuracy']
+        valacc = history.history['val_accuracy']
+        trainloss = history.history['loss']
+        valloss = history.history['val_loss']
+
+        # Store in dataframe
+        trainaccdf.loc[i] = trainacc
+        valaccdf.loc[i] = valacc
+        trainlossdf.loc[i] = trainloss
+        vallossdf.loc[i] = valloss
+
+        i += 1
+
+    trainaccdf.loc['mean'] = trainaccdf.mean()
+    valaccdf.loc['mean'] = valaccdf.mean()
+    trainlossdf.loc['mean'] = trainlossdf.mean()
+    vallossdf.loc['mean'] = vallossdf.mean()
 
     # Plot results
     plt.figure()
     plt.title('Training and Validation Accuracy vs. # of Epochs')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
-    plt.plot(epochs, trainacc, label='Training')
-    plt.plot(epochs, valacc, label='Validation')
+    plt.plot(epochs, trainaccdf.loc['mean'], label='Training')
+    plt.plot(epochs, valaccdf.loc['mean'], label='Validation')
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -488,10 +506,98 @@ def ann_regularization():
     plt.title('Training and Validation Loss vs. # of Epochs')
     plt.xlabel('Epochs')
     plt.ylabel('Loss: Binary Crossentropy')
-    plt.plot(epochs, trainloss, label='Training')
-    plt.plot(epochs, valloss, label='Validation')
+    plt.plot(epochs, trainlossdf.loc['mean'], label='Training')
+    plt.plot(epochs, vallossdf.loc['mean'], label='Validation')
     plt.legend()
     plt.tight_layout()
     plt.show()
 
-ann_regularization()
+    # Print tables to see exact values. Take first 20 columns as performance notably decreases after 20 epochs for the
+    # validation data.
+    print('Training Loss:')
+    print(trainlossdf.iloc[:, :20].to_string())
+    print('\n')
+    print('Validation Loss:')
+    print(vallossdf.iloc[:, :20].to_string())
+    print('\n')
+    print('Training Accuracy:')
+    print(trainaccdf.iloc[:, :20].to_string())
+    print('\n')
+    print('Validation Accuracy:')
+    print(valaccdf.iloc[:, :20].to_string())
+
+    # Consistently best performance (on average) was observed for 6-8 training epochs. For the purposes of implementing
+    # our model, we will allow for up to 10 epochs, and use the EarlyStopping() functionality of keras to stop training
+    # the model once peak performance is reached. We will give a patience of 4 lower accuracy scores, and keep the
+    # best weights for the model.
+
+
+def KNN_neighbor_optimization():
+    # Initialize everything as in other trials
+    dailydf = datamanipulation.retrieve()
+    dailydf = datamanipulation.timeformatter(dailydf)
+    dailydf = indicators.all_indicators(dailydf)
+
+    # Split into original comparison set, training, validation, and testing sets
+    original, training, validation, testing = MLcomponents.data_processor(dailydf)
+
+    # Get testing data out
+    x_test = testing[0]
+    y_test = testing[1]
+
+    # Take fold with most of the available training data
+    # x_train = training[8][0]
+    # y_train = training[8][1]
+    # x_val = validation[8][0]
+    # y_val = validation[8][1]
+
+
+
+    neighbors = [i for i in range(1, 20, 1)]
+
+    # Initialize dataframe to capture results
+    summarydf = pd.DataFrame(columns=neighbors)
+
+    # Iterate over each fold
+    for i in range(len(training)):
+        x_train = training[i][0]
+        y_train = training[i][1]
+        x_val = validation[i][0]
+        y_val = validation[i][1]
+
+        # Normalize x_values with StandardScaler
+        x_train, x_val, x_test = MLcomponents.SSnormalize(x_train, x_val, x_test)
+
+        # Clean up y values with y_cleaner
+        y_train, y_val, y_test = MLcomponents.y_cleaner(y_train, y_val, y_test)
+
+        # Get fold name
+        fold = 'Fold ' + str(i + 1)
+
+        accsummary = []
+
+        for n in neighbors:
+            y_pred = MLcomponents.KNN_prediction(x_train, y_train, x_val, n_neighbors=n)
+
+            acc = accuracy_score(y_val, y_pred)
+            accsummary.append(acc)
+
+        summarydf.loc[fold] = accsummary
+
+    # Calculate mean accuracy for each n over all folds
+    summarydf.loc['mean'] = summarydf.mean()
+
+    # Plot results
+    plt.figure()
+    plt.title('Accuracy vs. N Neighbors')
+    plt.plot(neighbors, summarydf.loc['mean'])
+    # for i in range(len(summarydf.index.values)):
+    #     fold = 'Fold ' + str(i + 1)
+    #     plt.plot(neighbors, summarydf.loc[fold], label=fold)
+    plt.xlabel('N Neighbors')
+    plt.ylabel('Accuracy')
+    # plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+KNN_neighbor_optimization()

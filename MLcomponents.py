@@ -206,7 +206,7 @@ def KNN_prediction(x_train, y_train, x_test, n_neighbors=2):
     return results
 
 
-def RF_prediction(x_train, y_train, x_test, n_estimators=100, maxdepth=None):
+def RF_prediction(x_train, y_train, x_test, n_estimators=140, maxdepth=10):
     """
     Builds Random Forest classification model with training data and returns a prediction array.
     :param x_train: training data input
@@ -222,8 +222,8 @@ def RF_prediction(x_train, y_train, x_test, n_estimators=100, maxdepth=None):
     return results
 
 
-def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=200, dropout1=0.75,
-                   dropout2=0.25, epochs=20, es=False):
+def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100, dropout1=0.1,
+                   dropout2=0.5, epochs=10, es=True):
     """
 
     :param x_train:
@@ -272,7 +272,7 @@ def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=200, dropout1=
 
     model.compile(optimizer=optim, loss=loss, metrics=metrics)
     if es:
-        early_stopping = EarlyStopping(patience=2, restore_best_weights=True)
+        early_stopping = EarlyStopping(patience=4, restore_best_weights=True)
         history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val),
                   callbacks=[early_stopping])
     else:
@@ -339,8 +339,8 @@ def evaluate_confusion(idealresults, MLresults):
     # Calculate accuracy, precision, etc
     TP = confusion[0][0]
     TN = confusion[1][1]
-    FP = confusion[0][1]
-    FN = confusion[1][0]
+    FP = confusion[1][0]
+    FN = confusion[0][1]
     acc = (TP + TN) / (TP + TN + FP + FN)
     p = TP / (TP + FP)
     r = TP / (TP + FN)
