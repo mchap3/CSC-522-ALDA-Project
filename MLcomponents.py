@@ -1,7 +1,4 @@
 '''
-
-
-'''
 Place for putting together machine learning functions/analyses.
 '''
 from scipy.signal import argrelextrema
