@@ -16,8 +16,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.model_selection import RandomizedSearchCV
 import sys
-import tensorflow as tf
-from tensorflow import keras
+# import tensorflow as tf
+# from tensorflow import keras
 import accountperformance
 import matplotlib.pyplot as plt
 
@@ -118,12 +118,11 @@ def five_day_centroid(data):
     return data
 
 
-def data_processor(data):
+def data_processor(data, n_splits):
     # Assign the target values and split
     modeldata = cont_trend_label(data, w=0.008)
     modeldata.set_index('date', inplace=True)
     modeldata = modeldata.dropna()
-
     # Capture the original data for comparison later.
     original = modeldata.get(['open', 'high', 'low', 'close', 'volume'])
     original = original[original.index >= '2017-01-01']
@@ -132,8 +131,11 @@ def data_processor(data):
     y = modeldata.iloc[:, (modeldata.shape[1] - 1)]
     x_test = x[x.index >= '2017-01-01']
     y_test = y[y.index >= '2017-01-01']
+    x = x[x.index < '2017-01-01']
+    y = y[y.index < '2017-01-01']
     # tscv = TimeSeriesSplit(n_splits=10, max_train_size=(math.ceil(0.6 * modeldata.shape[0])))
-    tscv = TimeSeriesSplit(n_splits=10)
+    # n_splits = 5
+    tscv = TimeSeriesSplit(n_splits)
     training = []
     validation = []
     testing = [x_test, y_test]
@@ -154,6 +156,7 @@ def data_processor(data):
         valentry.append(y_val)
         training.append(trainentry)
         validation.append(valentry)
+
     return original, training, validation, testing
 
 
@@ -317,14 +320,14 @@ def evaluate_confusion(idealresults, MLresults):
 
     # Calculate and display confusion matrix
     confusion = sklearn.metrics.confusion_matrix(y_true=y_test, y_pred=y_pred, labels=[1, 0])
-    print('\n')
-    print('Confusion Matrix:')
+    # print('\n')
+    # print('Confusion Matrix:')
     print(confusion)
 
     # Plot the confusion matrix
     cmplot = sklearn.metrics.ConfusionMatrixDisplay(confusion, display_labels=['Buy', 'Sell'])
     cmplot.plot()
-    plt.show()
+    # plt.show()
 
     # Calculate accuracy, precision, etc
     TP = confusion[0][0]
@@ -343,6 +346,8 @@ def evaluate_confusion(idealresults, MLresults):
     print('F1 Score: ' + str(f1))
     print('\n')
 
+    return acc, p, r, f1
+
 
 def evaluate_returns(idealresults, MLresults):
     """
@@ -360,6 +365,7 @@ def evaluate_returns(idealresults, MLresults):
     # Calculate ideal returns
     idealresults = datamanipulation.mid(idealresults)
     idealresults.reset_index(inplace=True)
+
     idealreturns, idealacctdf = accountperformance.estimate_returns(idealresults)
 
     # Calculate ML returns
