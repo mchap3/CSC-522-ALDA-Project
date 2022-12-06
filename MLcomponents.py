@@ -15,6 +15,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier as KNN
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
 from sklearn.model_selection import RandomizedSearchCV
 import sys
 import tensorflow as tf
@@ -273,6 +275,36 @@ def ANN_prediction(x_train, y_train, x_val, y_val, x_test):
     model.compile(optimizer=optim, loss=loss, metrics=metrics)
     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
 
+    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
+
+    return results
+
+
+def NB_prediction(x_train, y_train, x_test):
+    """
+    Builds Naive Bayes classification model with training data and returns a prediction array.
+    :param x_train: training data input
+    :param y_train: training data target
+    :param x_test: testing data input
+    :return: prediction results as dataframe
+    """
+    model = GaussianNB(var_smoothing=0.02782559402207126)
+    model.fit(x_train, y_train)
+    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
+
+    return results
+
+
+def SVM_prediction(x_train, y_train, x_test):
+    """
+    Builds Naive Bayes classification model with training data and returns a prediction array.
+    :param x_train: training data input
+    :param y_train: training data target
+    :param x_test: testing data input
+    :return: prediction results as dataframe
+    """
+    model = SVC(kernel='linear', C=10)
+    model.fit(x_train, y_train)
     results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
 
     return results
