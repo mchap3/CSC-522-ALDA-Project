@@ -86,16 +86,19 @@ def cont_trend_label(df, calc='close', w=0.05):
     return df
 
 
-def five_day_centroid(data):
+def moving_centroid(data):
     '''
-    Runs a 5-day moving average of the Centroid and then classifies as 1 (buy) or -1 (sell)
-    if the 5-day average changed by more than the threshold.
+    Runs a moving average of the Centroid and then classifies as 1 (buy) or -1 (sell)
+    if the moving average changed by more than the threshold.
     :param data: stock data to work with
     :return: dataframe with columns for five-day average, buy, sell, and Buy_Sell appended
     '''
 
+    # Add the centroid indicator
     data = datamanipulation.centroid(data)
+    # Difference from previous day's returns in dollars
     minimum_delta = .25
+    # Number of rolling days to use for the centroid.
     num_rolling_days = 3
     data['Rolling5'] = data['centroid'].rolling(num_rolling_days).mean()
     data.Rolling5 = data.Rolling5.shift(-1 * num_rolling_days)
@@ -111,6 +114,7 @@ def five_day_centroid(data):
     data = data.drop('Rolling5_Buy', axis = 1)
     data = data.drop('Rolling5_Sell', axis = 1)
 
+    # Change holds to previous day's class
     for current in data.loc[data['Class'] == 0].index:
         if current != 0:
             data.loc[current, 'Class'] = data.loc[current - 1, 'Class']
@@ -223,7 +227,6 @@ def RF_prediction(x_train, y_train, x_test):
 
 def ANN_prediction(x_train, y_train, x_val, y_val, x_test):
     """
-
     :param x_train:
     :param y_train:
     :param x_val:

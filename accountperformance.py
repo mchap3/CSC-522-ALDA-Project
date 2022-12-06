@@ -256,8 +256,8 @@ def estimate_returns(data):
 
 
 # cont = estimate_returns(MLcomponents.cont_trend_label(data, w=0.1), method='cont_trend_label')
-# mov = estimate_returns(MLcomponents.five_day_centroid(data), method='five_day_centroid')
-# cont['active: five_day_centroid'] = mov['active: five_day_centroid']
+# mov = estimate_returns(MLcomponents.moving_centroid(data), method='moving_centroid')
+# cont['active: moving_centroid'] = mov['active: moving_centroid']
 # cont.rename(columns={'summary': 'summary: w=0.1'}, inplace=True)
 # cont.set_index('summary: w=0.1', inplace=True)
 # print(cont.to_string())

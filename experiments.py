@@ -26,11 +26,13 @@ max_neighbors = 10
 dailydf = datamanipulation.retrieve()
 weeklydf = datamanipulation.retrieve(timeframe='weekly')
 monthlydf = datamanipulation.retrieve(timeframe='monthly')
-
+"""
+Function runs our knn method
+"""
 def knn_experiment():
 
     #################################
-    # This section was used to iterate through 1 - 10 neighbors with 10-fold cross-validation.
+    # This section iterates through 1 - 10 neighbors with 10-fold cross-validation.
     # It was found that 9NN was best for 10-fold returns. 7NN was best for accuracy and 2nd best for returns.
     # We chose 7NN because accuracy would seem to be a better measure because returns are based not only
     # on accuracy, but what happens after the buy/sell.
@@ -82,7 +84,7 @@ def knn_experiment():
 
 
     #################################
-    # This section will use 10 splits and 7NN
+    # This section uses 10 splits and 7NN and all indicators
     ################################
     # Prep daily data
     n_splits = 10
@@ -112,7 +114,7 @@ def knn_experiment():
     #################################
 
     #################################
-    # This section will use 10 splits and 7NN and NO attributes.
+    # This section uses 10 splits and 7NN and NO indicators.
     ################################
     # Prep daily data
     n_splits = 10
@@ -140,7 +142,17 @@ def knn_experiment():
     idealacctdf, MLacctdf = MLcomponents.evaluate_returns(idealresults, MLresults)
 
 
-
+"""
+    Helper function to clean up knn_experiment
+    :param original
+    :param training set to use for training
+    :param validation set to use for validation
+    :param testing set to use for testing
+    :param fold fold number to use for training and validation
+    :param n_neighbors number of neighbors to use for knn. Default is 2
+    :return idealresults results from ideal case
+    :return MLresults results from the chosen ML method
+"""
 def knn_helper(original, training, validation, testing, fold, n_neighbors=2):
     x_train = training[fold][0]
     y_train = training[fold][1]
