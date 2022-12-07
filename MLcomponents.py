@@ -278,35 +278,6 @@ def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100, dropout1=
 
     return results, history
 
-def NB_prediction(x_train, y_train, x_test):
-    """
-    Builds Naive Bayes classification model with training data and returns a prediction array.
-    :param x_train: training data input
-    :param y_train: training data target
-    :param x_test: testing data input
-    :return: prediction results as dataframe
-    """
-    model = GaussianNB(var_smoothing=0.02782559402207126)
-    model.fit(x_train, y_train)
-    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
-
-    return results
-
-
-def SVM_prediction(x_train, y_train, x_test):
-    """
-    Builds Naive Bayes classification model with training data and returns a prediction array.
-    :param x_train: training data input
-    :param y_train: training data target
-    :param x_test: testing data input
-    :return: prediction results as dataframe
-    """
-    model = SVC(kernel='linear', C=10)
-    model.fit(x_train, y_train)
-    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
-
-    return results
-
 
 def NB_prediction(x_train, y_train, x_test):
     """
