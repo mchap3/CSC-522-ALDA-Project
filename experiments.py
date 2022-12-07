@@ -140,6 +140,7 @@ def trend_optimization():
     print(maxvals.to_string())
 
 
+# 3) Optimize n_estimators and maxdepth parameters for random forest.
 def RF_optimization():
     """
     Code to optimize random forest classification based on folds and n_estimators.
@@ -278,6 +279,8 @@ def RF_optimization():
     # performance around 140ish. We will run further trials to compare maxdepth=10 and n_estimator=140 with fold 6 as
     # the training set against the validation set.
 
+
+# 4) Run comparison trials to see if optimized model is better than default model.
 def RF_comparison():
     """
     Does a multi-run comparison between default RF parameters and the potential 'optimized' parameters determined from
@@ -356,6 +359,7 @@ def RF_comparison():
     # for final model.
 
 
+# 5) Optimize ANN inputs (number of neurons in each layer, dropout rates for each dropout layer)
 def ANN_optimization():
     """
     Optimizing ANN for number of nodes and dropout rates.
@@ -435,6 +439,8 @@ def ANN_optimization():
     # 2) 100 neurons, drop1 = 0.1, drop2 = 0.5
     # For further testing, 2) was chosen for the reduction in computational complexity with fewer nodes/neurons
 
+
+# 6) Optimize number of training epochs for ANN
 def ANN_regularization():
     """
     Function to optimize number of training epochs to prevent overfitting.
@@ -543,6 +549,7 @@ def ANN_regularization():
     # best weights for the model.
 
 
+# 7) Optimize KNN n_neighbors parameter
 def KNN_neighbor_optimization():
     # Initialize everything as in other trials
     dailydf = datamanipulation.retrieve()

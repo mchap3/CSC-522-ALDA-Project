@@ -4,7 +4,6 @@ Place for putting together machine learning functions/analyses.
 import numpy as np
 import pandas as pd
 import datamanipulation
-import indicators
 import math
 import sklearn
 from sklearn import metrics
@@ -121,6 +120,11 @@ def five_day_centroid(data):
 
 
 def data_processor(data):
+    """
+    Handles all of the data splitting to feed into models.
+    :param data: full dataset to be split
+    :return: original dataset, training data, validation data, and testing data
+    """
     # Assign the target values and split
     modeldata = cont_trend_label(data, w=0.008)
     modeldata.set_index('date', inplace=True)
@@ -186,7 +190,7 @@ def y_cleaner(y_train, y_val, y_test):
     return y_train, y_val, y_test
 
 
-def KNN_prediction(x_train, y_train, x_test, n_neighbors=2):
+def KNN_prediction(x_train, y_train, x_test, n_neighbors=7):
     """
     Builds KNN model with training data and returns a prediction array.
     :param x_train: training data input
@@ -219,7 +223,7 @@ def RF_prediction(x_train, y_train, x_test, n_estimators=140, maxdepth=10):
 
 
 def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100, dropout1=0.1,
-                   dropout2=0.5, epochs=12, es=True):
+                   dropout2=0.5, epochs=12, es=True, verbose=1):
     """
     ANN model with optimized parameters as defaults to predict buy/sell points.
     :param x_train:
@@ -260,9 +264,10 @@ def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100, dropout1=
     if es:
         early_stopping = EarlyStopping(patience=4, restore_best_weights=True)
         history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val),
-                  callbacks=[early_stopping])
+                  callbacks=[early_stopping], verbose=verbose)
     else:
-        history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
+        history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val),
+                            verbose=verbose)
 
     results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
 
@@ -342,14 +347,14 @@ def evaluate_confusion(idealresults, MLresults):
 
     # Calculate and display confusion matrix
     confusion = sklearn.metrics.confusion_matrix(y_true=y_test, y_pred=y_pred, labels=[1, 0])
-    print('\n')
-    print('Confusion Matrix:')
-    print(confusion)
+    # print('\n')
+    # print('Confusion Matrix:')
+    # print(confusion)
 
     # Plot the confusion matrix
-    cmplot = sklearn.metrics.ConfusionMatrixDisplay(confusion, display_labels=['Buy', 'Sell'])
-    cmplot.plot()
-    plt.show()
+    # cmplot = sklearn.metrics.ConfusionMatrixDisplay(confusion, display_labels=['Buy', 'Sell'])
+    # cmplot.plot()
+    # plt.show()
 
     # Calculate accuracy, precision, etc
     TP = confusion[0][0]
@@ -361,12 +366,20 @@ def evaluate_confusion(idealresults, MLresults):
     r = TP / (TP + FN)
     f1 = (2 * p * r) / (p + r)
 
+    results = pd.DataFrame(columns=['result'])
+    results.loc['Accuracy'] = acc
+    results.loc['Precision'] = p
+    results.loc['Recall'] = r
+    results.loc['F1 Score'] = f1
+
     # Print results
-    print('Accuracy: ' + str(acc))
-    print('Precision: ' + str(p))
-    print('Recall: ' + str(r))
-    print('F1 Score: ' + str(f1))
-    print('\n')
+    # print('Accuracy: ' + str(acc))
+    # print('Precision: ' + str(p))
+    # print('Recall: ' + str(r))
+    # print('F1 Score: ' + str(f1))
+    # print('\n')
+
+    return results
 
 
 def evaluate_returns(idealresults, MLresults):
@@ -389,10 +402,10 @@ def evaluate_returns(idealresults, MLresults):
     MLreturns, MLacctdf = accountperformance.estimate_returns(MLresults)
 
     # Print Results
-    print('Ideal Return Comparison: ')
-    print(idealreturns)
-    print('\n')
-    print('ML Return Comparison: ')
-    print(MLreturns)
+    # print('Ideal Return Comparison: ')
+    # print(idealreturns)
+    # print('\n')
+    # print('ML Return Comparison: ')
+    # print(MLreturns)
 
-    return idealacctdf, MLacctdf
+    return idealreturns, MLreturns, idealacctdf, MLacctdf

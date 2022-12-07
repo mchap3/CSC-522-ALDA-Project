@@ -2,20 +2,13 @@
 A file for backtesting results, analyzing our data outputs, etc.
 '''
 
-
-import datamanipulation
-import indicators
-# import MLcomponents
 import pandas as pd
-import numpy as np
 import math
-import matplotlib.pyplot as plt
 import sys
 
 if not sys.warnoptions:
     import warnings
     warnings.simplefilter("ignore")
-
 
 
 def maxdrawdown_long(data):

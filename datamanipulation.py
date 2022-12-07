@@ -4,8 +4,7 @@ Contains functions to retrieve data from spreadsheets, put them in dataframes, s
 
 import pandas as pd
 import os
-import re
-import datetime as dt
+
 
 def retrieve(timeframe='daily'):
     '''
