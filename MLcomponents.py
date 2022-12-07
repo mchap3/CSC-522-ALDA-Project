@@ -2,25 +2,22 @@
 Place for putting together machine learning functions/analyses.
 '''
 
-from scipy.signal import argrelextrema
 import numpy as np
 import pandas as pd
 import datamanipulation
-import indicators
 import math
 import sklearn
 from sklearn import metrics
 from sklearn.model_selection import TimeSeriesSplit
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
-from sklearn.model_selection import RandomizedSearchCV
 import sys
 import tensorflow as tf
 from tensorflow import keras
+from keras.callbacks import EarlyStopping
 import accountperformance
 import matplotlib.pyplot as plt
 
@@ -111,8 +108,10 @@ def five_day_centroid(data):
 
     # Drop all rows with NaN
     data = data.dropna()
+
     # Reset row numbers
     data = data.reset_index(drop=True)
+
     # Remove unneeded columns
     data = data.drop('Rolling5_Buy', axis = 1)
     data = data.drop('Rolling5_Sell', axis = 1)
@@ -126,6 +125,11 @@ def five_day_centroid(data):
 
 
 def data_processor(data):
+    """
+    Handles all of the data splitting to feed into models.
+    :param data: full dataset to be split
+    :return: original dataset, training data, validation data, and testing data
+    """
     # Assign the target values and split
     modeldata = cont_trend_label(data, w=0.008)
     modeldata.set_index('date', inplace=True)
@@ -139,7 +143,6 @@ def data_processor(data):
     y = modeldata.iloc[:, (modeldata.shape[1] - 1)]
     x_test = x[x.index >= '2017-01-01']
     y_test = y[y.index >= '2017-01-01']
-    # tscv = TimeSeriesSplit(n_splits=10, max_train_size=(math.ceil(0.6 * modeldata.shape[0])))
     x = x[x.index < '2017-01-01']
     y = y[y.index < '2017-01-01']
     tscv = TimeSeriesSplit(n_splits=10)
@@ -147,11 +150,7 @@ def data_processor(data):
     validation = []
     testing = [x_test, y_test]
 
-    # Probably could be cleaned up a little bit. I did not make it so that the test values are removed from the pool
-    # before going into tscv. I ended up using index 5 for training and validation as that took the training set from
-    # 2003 to 2013, and the validation set from 2014-2015 about. Index 6 could have been usable for models that didn't
-    # necessarily require a validation set (train: 2003 - 2015, val: 2015-2017), but interestingly I got better results
-    # with the index 5 years.
+    # Split values with time series cross validation.
     for train_index, test_index in tscv.split(x):
         trainentry = []
         valentry = []
@@ -196,7 +195,7 @@ def y_cleaner(y_train, y_val, y_test):
     return y_train, y_val, y_test
 
 
-def KNN_prediction(x_train, y_train, x_test, n_neighbors=2):
+def KNN_prediction(x_train, y_train, x_test, n_neighbors=7):
     """
     Builds KNN model with training data and returns a prediction array.
     :param x_train: training data input
@@ -212,37 +211,39 @@ def KNN_prediction(x_train, y_train, x_test, n_neighbors=2):
     return results
 
 
-def RF_prediction(x_train, y_train, x_test):
+def RF_prediction(x_train, y_train, x_test, n_estimators=140, maxdepth=10):
     """
     Builds Random Forest classification model with training data and returns a prediction array.
     :param x_train: training data input
     :param y_train: training data target
     :param x_test: testing data input
+    :param n_estimators: parameter for random forest
     :return: prediction results as dataframe
     """
-    model = RandomForestClassifier()
+    model = RandomForestClassifier(n_estimators=n_estimators, max_depth=maxdepth)
     model.fit(x_train, y_train)
     results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
 
     return results
 
 
-def ANN_prediction(x_train, y_train, x_val, y_val, x_test):
+def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100, dropout1=0.1,
+                   dropout2=0.5, epochs=12, es=True, verbose=1):
     """
-
+    ANN model with optimized parameters as defaults to predict buy/sell points.
     :param x_train:
     :param y_train:
     :param x_val:
     :param y_val:
     :param x_test:
-    :return:
+    :return: prediction and model history for evaluation
     """
     input_neurons = x_train.shape[1]
     hidden1 = input_neurons * 2
     output_neurons = 1
 
     # Set variables
-    epochs = 50
+    epochs = epochs
     hidden_act = 'relu'
     out_act = 'sigmoid'
     loss = 'binary_crossentropy'
@@ -252,31 +253,56 @@ def ANN_prediction(x_train, y_train, x_val, y_val, x_test):
     # batch_size = 10
 
     # Set up model
-    # inputs = keras.Input(shape=(input_neurons,), name='data')
-    # x1 = keras.layers.Dense(hidden1, activation=hidden_act, name='hidden')(inputs)
-    # # x1 = keras.layers.LSTM(32, input_shape=(1, x_train.shape[1]), activation = 'relu', return_sequences=False)(inputs)
-    # x2 = keras.layers.Dropout(.75)(x1)
-    # x3 = keras.layers.Dense(hidden1/4)(x2)
-    # output = keras.layers.Dense(output_neurons, activation=out_act, name='predictions')(x3)
-    #
-    # model = keras.Model(inputs=inputs, outputs=output)
-    # model.compile(optimizer=optim, loss=loss, metrics=metrics)
-    # model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
-    model = keras.Sequential([keras.layers.Dense(32, activation=hidden_act, input_shape=(input_neurons,)),
+    model = keras.Sequential([keras.layers.Dense(hidden1, activation=hidden_act, input_dim=input_neurons),
                               keras.layers.Activation('relu'),
-                              keras.layers.Dropout(.75),
-                              keras.layers.Dense(250, activation=hidden_act),
+                              keras.layers.Dropout(dropout1),
+                              keras.layers.Dense(hidden, activation=hidden_act),
                               keras.layers.Activation('relu'),
-                              keras.layers.Dense(250, activation=hidden_act),
-                              keras.layers.Dropout(.2),
+                              keras.layers.Dense(hidden, activation=hidden_act),
+                              keras.layers.Dropout(dropout2),
                               keras.layers.Activation('relu'),
-                              keras.layers.Dense(100, activation=hidden_act),
+                              keras.layers.Dense(hidden, activation=hidden_act),
                               keras.layers.Activation('relu'),
                               keras.layers.Dense(output_neurons, activation=out_act, name='predictions')])
 
     model.compile(optimizer=optim, loss=loss, metrics=metrics)
-    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
+    if es:
+        early_stopping = EarlyStopping(patience=4, restore_best_weights=True)
+        history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val),
+                  callbacks=[early_stopping], verbose=verbose)
+    else:
+        history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val),
+                            verbose=verbose)
 
+    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
+
+    return results, history
+
+def NB_prediction(x_train, y_train, x_test):
+    """
+    Builds Naive Bayes classification model with training data and returns a prediction array.
+    :param x_train: training data input
+    :param y_train: training data target
+    :param x_test: testing data input
+    :return: prediction results as dataframe
+    """
+    model = GaussianNB(var_smoothing=0.02782559402207126)
+    model.fit(x_train, y_train)
+    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
+
+    return results
+
+
+def SVM_prediction(x_train, y_train, x_test):
+    """
+    Builds Naive Bayes classification model with training data and returns a prediction array.
+    :param x_train: training data input
+    :param y_train: training data target
+    :param x_test: testing data input
+    :return: prediction results as dataframe
+    """
+    model = SVC(kernel='linear', C=10)
+    model.fit(x_train, y_train)
     results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
 
     return results
@@ -356,31 +382,40 @@ def evaluate_confusion(idealresults, MLresults):
 
     # Calculate and display confusion matrix
     confusion = sklearn.metrics.confusion_matrix(y_true=y_test, y_pred=y_pred, labels=[1, 0])
-    print('\n')
-    print('Confusion Matrix:')
-    print(confusion)
+    # print('\n')
+    # print('Confusion Matrix:')
+    # print(confusion)
 
     # Plot the confusion matrix
-    cmplot = sklearn.metrics.ConfusionMatrixDisplay(confusion, display_labels=['Buy', 'Sell'])
-    cmplot.plot()
-    plt.show()
+    # cmplot = sklearn.metrics.ConfusionMatrixDisplay(confusion, display_labels=['Buy', 'Sell'])
+    # cmplot.plot()
+    # plt.show()
 
     # Calculate accuracy, precision, etc
     TP = confusion[0][0]
     TN = confusion[1][1]
-    FN = confusion[0][1]
     FP = confusion[1][0]
+    FN = confusion[0][1]
+    
     acc = (TP + TN) / (TP + TN + FP + FN)
     p = TP / (TP + FP)
     r = TP / (TP + FN)
     f1 = (2 * p * r) / (p + r)
 
+    results = pd.DataFrame(columns=['result'])
+    results.loc['Accuracy'] = acc
+    results.loc['Precision'] = p
+    results.loc['Recall'] = r
+    results.loc['F1 Score'] = f1
+
     # Print results
-    print('Accuracy: ' + str(acc))
-    print('Precision: ' + str(p))
-    print('Recall: ' + str(r))
-    print('F1 Score: ' + str(f1))
-    print('\n')
+    # print('Accuracy: ' + str(acc))
+    # print('Precision: ' + str(p))
+    # print('Recall: ' + str(r))
+    # print('F1 Score: ' + str(f1))
+    # print('\n')
+
+    return results
 
 
 def evaluate_returns(idealresults, MLresults):
@@ -391,10 +426,6 @@ def evaluate_returns(idealresults, MLresults):
     :param MLresults: model prediction table
     :return: nothing, prints table with results
     """
-
-    # for model, result in MLresults.items():
-    #     colname = model + ' class'
-    #     idealresults[colname] = result['class']
 
     # Calculate ideal returns
     idealresults = datamanipulation.mid(idealresults)
@@ -407,20 +438,11 @@ def evaluate_returns(idealresults, MLresults):
     MLreturns, MLacctdf = accountperformance.estimate_returns(MLresults)
 
     # Print Results
-    print('Ideal Return Comparison: ')
-    print(idealreturns)
-    print('\n')
-    print('ML Return Comparison: ')
-    print(MLreturns)
+    # print('Ideal Return Comparison: ')
+    # print(idealreturns)
+    # print('\n')
+    # print('ML Return Comparison: ')
+    # print(MLreturns)
 
-    return idealacctdf, MLacctdf
-
-
-
-    # if MLresults.iloc[-1, 1] != MLresults.iloc[-2,-1]:
-    #     MLresults = MLresults.iloc[:-1, :]
-    # print(results.to_string())
-    # print(MLresults)
-
-
+    return idealreturns, MLreturns, idealacctdf, MLacctdf
 
