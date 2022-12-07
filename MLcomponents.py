@@ -140,6 +140,8 @@ def data_processor(data):
     x_test = x[x.index >= '2017-01-01']
     y_test = y[y.index >= '2017-01-01']
     # tscv = TimeSeriesSplit(n_splits=10, max_train_size=(math.ceil(0.6 * modeldata.shape[0])))
+    x = x[x.index < '2017-01-01']
+    y = y[y.index < '2017-01-01']
     tscv = TimeSeriesSplit(n_splits=10)
     training = []
     validation = []
@@ -288,7 +290,7 @@ def NB_prediction(x_train, y_train, x_test):
     :param x_test: testing data input
     :return: prediction results as dataframe
     """
-    model = GaussianNB(var_smoothing=0.02782559402207126)
+    model = GaussianNB(var_smoothing=0.0004641588833612782)
     model.fit(x_train, y_train)
     results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
 
@@ -303,7 +305,7 @@ def SVM_prediction(x_train, y_train, x_test):
     :param x_test: testing data input
     :return: prediction results as dataframe
     """
-    model = SVC(kernel='linear', C=10)
+    model = SVC(kernel='linear', C=0.1)
     model.fit(x_train, y_train)
     results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
 
