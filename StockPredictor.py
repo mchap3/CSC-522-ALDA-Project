@@ -42,22 +42,22 @@ II) This section of code allows the experiments to be run and examined. Feel fre
 function calls and see the results.
 """
 
-# I.A) KNN Experiments
+# II.A) KNN Experiments
 # experiments.KNN_neighbor_optimization()
 
-# I.B) NB Experiments
+# II.B) NB Experiments
 # NaiveBayes.run_NB_optimization_experiment()
 # NaiveBayes.run_NB_final_experiment()
 
-# I.C) RF Experiments
+# II.C) RF Experiments
 # experiments.RF_optimization()
 # experiments.RF_comparison()
 
-# I.D) ANN Experiments
+# II.D) ANN Experiments
 # experiments.ANN_optimization()
 # experiments.ANN_regularization()
 
-# I.E) SVM Experiments
+# II.E) SVM Experiments
 # SVM.run_SVM_optimization_experiment()
 # SVM.run_SVM_final_experiment()
 
