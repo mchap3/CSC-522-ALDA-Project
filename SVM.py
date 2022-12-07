@@ -168,6 +168,7 @@ def run_SVM_optimization_experiment():
     labeling methods) are compared. Prints optimal paramaters and summary
     results table.
     """
+    print("Running SVM optimization experiment:\n")
     print("Using continuous trend labeling...")
     compare_transformations_SVM()
     print("Using 5-day threshold labeling...")
@@ -181,6 +182,7 @@ def run_SVM_final_experiment():
     all indicators and no indicators. Prints summary tables for confusion
     matrix and return metrics.
     """
+    print("Running SVM optimized model comparison:\n")
     print("Using all indicators...")
     compare_best_SVM()
     print("Using no indicators...")
