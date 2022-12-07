@@ -29,60 +29,65 @@ monthlydf = datamanipulation.retrieve(timeframe='monthly')
 """
 Function runs our knn method
 """
+
+def find_knn_parameters():
+#################################
+# This section iterates through 1 - 10 neighbors with 10-fold cross-validation.
+# It was found that 9NN was best for 10-fold returns. 7NN was best for accuracy and 2nd best for returns.
+# We chose 7NN because accuracy would seem to be a better measure because returns are based not only
+# on accuracy, but what happens after the buy/sell.
+#################################
+
+    return_matrix = pd.DataFrame(np.zeros((max_splits + 1)))
+    acc_matrix = pd.DataFrame(np.zeros((max_splits + 1)))
+
+    n_splits = 10
+    max_return = 0
+    max_n_splits = 0
+
+    # Prep daily data
+    dailydf = datamanipulation.retrieve()
+    dailydf = datamanipulation.timeformatter(dailydf)
+    dailydf = indicators.all_indicators(dailydf)
+
+    print("Iterate 1-10 Neighbors for 10 Splits")
+
+    fold = n_splits - 1
+
+    # Split into original comparison set, training, validation, and testing sets
+    original, training, validation, testing = MLcomponents.data_processor(dailydf, n_splits)
+
+    # Iterate through n_neighbors to create matrix
+    for n_neighbors in range(1, max_neighbors + 1):
+        print("\n\nNeighbors: ", n_neighbors, "\n")
+        idealresults, MLresults = knn_helper(original, training, validation, testing, fold, n_neighbors)
+
+        # Evaluate prediction quality by confusion matrix
+        acc, p, r, f1 = MLcomponents.evaluate_confusion(idealresults, MLresults)
+
+        # Evaluate return metrics
+        idealacctdf, MLacctdf = MLcomponents.evaluate_returns(idealresults, MLresults)
+
+        if MLacctdf.iloc[-1, :]['account value'] - 10000 > max_return:
+            max_return = MLacctdf.iloc[-1, :]['account value'] - 10000
+            max_n_splits = n_neighbors
+            # max_fold = fold
+
+        return_matrix.iloc[n_neighbors] = MLacctdf.iloc[-1, :]['account value'] - 10000
+        acc_matrix.iloc[n_neighbors] = acc
+
+    print("Matrix of n_neighbors vs Returns")
+    print(return_matrix.round(2))
+    print("\nMatrix of n_neighbors vs Accuracy")
+    print(acc_matrix.round(3))
+    print("\nMax return and number of splits and fold: ", max_return, max_n_splits)
+
+#################################
+# End of n_neighbors evaluation
+#################################
+
+
 def knn_experiment():
-
-    #################################
-    # This section iterates through 1 - 10 neighbors with 10-fold cross-validation.
-    # It was found that 9NN was best for 10-fold returns. 7NN was best for accuracy and 2nd best for returns.
-    # We chose 7NN because accuracy would seem to be a better measure because returns are based not only
-    # on accuracy, but what happens after the buy/sell.
-    #################################
-
-    # return_matrix = pd.DataFrame(np.zeros((max_splits + 1)))
-    # acc_matrix = pd.DataFrame(np.zeros((max_splits + 1)))
-    #
-    # n_splits = 10
-    # max_return = 0
-    # max_n_splits = 0
-    # max_fold = 0
-    #
-    # # Prep daily data
-    # dailydf = datamanipulation.retrieve()
-    # dailydf = datamanipulation.timeformatter(dailydf)
-    # dailydf = indicators.all_indicators(dailydf)
-    #
-    # fold = n_splits - 1
-    #
-    # # Split into original comparison set, training, validation, and testing sets
-    # original, training, validation, testing = MLcomponents.data_processor(dailydf, n_splits)
-    #
-    # # Iterate through n_neighbors to create matrix
-    # for n_neighbors in range(1, max_neighbors + 1):
-    #     idealresults, MLresults = knn_helper(original, training, validation, testing, fold, n_neighbors)
-    #
-    #     # Evaluate prediction quality by confusion matrix
-    #     acc, p, r, f1 = MLcomponents.evaluate_confusion(idealresults, MLresults)
-    #
-    #     # Evaluate return metrics
-    #     idealacctdf, MLacctdf = MLcomponents.evaluate_returns(idealresults, MLresults)
-    #
-    #     if MLacctdf.iloc[-1, :]['account value'] - 10000 > max_return:
-    #         max_return = MLacctdf.iloc[-1, :]['account value'] - 10000
-    #         max_n_splits = n_neighbors
-    #         # max_fold = fold
-    #
-    #     return_matrix.iloc[n_neighbors] = MLacctdf.iloc[-1, :]['account value'] - 10000
-    #     acc_matrix.iloc[n_neighbors] = acc
-    #
-    # print(return_matrix.round(2))
-    # print(acc_matrix.round(3))
-    # print('Max return and number of splits and fold: ', max_return, max_n_splits)
-
-    #################################
-    # End of n_neighbors evaluation
-    #################################
-
-
     #################################
     # This section uses 10 splits and 7NN and all indicators
     ################################
@@ -95,11 +100,10 @@ def knn_experiment():
     dailydf = datamanipulation.timeformatter(dailydf)
     dailydf = indicators.all_indicators(dailydf)
 
+    print("All Indicators")
+
     # Split into original comparison set, training, validation, and testing sets
     original, training, validation, testing = MLcomponents.data_processor(dailydf, n_splits)
-    # print(training)
-    # print(validation)
-    # print(testing)
 
     idealresults, MLresults = knn_helper(original, training, validation, testing, fold, ideal_neighbors)
 
@@ -109,6 +113,7 @@ def knn_experiment():
     # Evaluate return metrics
     idealacctdf, MLacctdf = MLcomponents.evaluate_returns(idealresults, MLresults)
 
+    print()
     #################################
     # End of optimized parameters evaluation
     #################################
@@ -123,6 +128,8 @@ def knn_experiment():
 
     dailydf = datamanipulation.retrieve()
     dailydf = datamanipulation.timeformatter(dailydf)
+
+    print("No Indicators")
 
     # Split into original comparison set, training, validation, and testing sets
     original, training, validation, testing = MLcomponents.data_processor(dailydf, n_splits)

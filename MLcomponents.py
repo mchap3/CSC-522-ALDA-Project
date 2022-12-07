@@ -99,7 +99,7 @@ def moving_centroid(data):
     # Difference from previous day's returns in dollars
     minimum_delta = .25
     # Number of rolling days to use for the centroid.
-    num_rolling_days = 3
+    num_rolling_days = 4
     data['Rolling5'] = data['centroid'].rolling(num_rolling_days).mean()
     data.Rolling5 = data.Rolling5.shift(-1 * num_rolling_days)
     data['Rolling5_Buy'] = data.Rolling5 > (data.Rolling5.shift() + minimum_delta)
