@@ -15,6 +15,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier as KNN
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
 from sklearn.model_selection import RandomizedSearchCV
 import sys
 import tensorflow as tf
@@ -115,8 +117,8 @@ def five_day_centroid(data):
     data = data.drop('Rolling5_Buy', axis = 1)
     data = data.drop('Rolling5_Sell', axis = 1)
 
+    data.loc[0, 'class'] = 1
     for current in data.loc[data['class'] == 0].index:
-
         if current != 0:
             data.loc[current, 'class'] = data.loc[current - 1, 'class']
 
@@ -138,6 +140,8 @@ def data_processor(data):
     x_test = x[x.index >= '2017-01-01']
     y_test = y[y.index >= '2017-01-01']
     # tscv = TimeSeriesSplit(n_splits=10, max_train_size=(math.ceil(0.6 * modeldata.shape[0])))
+    x = x[x.index < '2017-01-01']
+    y = y[y.index < '2017-01-01']
     tscv = TimeSeriesSplit(n_splits=10)
     training = []
     validation = []
@@ -278,6 +282,36 @@ def ANN_prediction(x_train, y_train, x_val, y_val, x_test):
     return results
 
 
+def NB_prediction(x_train, y_train, x_test):
+    """
+    Builds Naive Bayes classification model with training data and returns a prediction array.
+    :param x_train: training data input
+    :param y_train: training data target
+    :param x_test: testing data input
+    :return: prediction results as dataframe
+    """
+    model = GaussianNB(var_smoothing=0.0004641588833612782)
+    model.fit(x_train, y_train)
+    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
+
+    return results
+
+
+def SVM_prediction(x_train, y_train, x_test):
+    """
+    Builds Naive Bayes classification model with training data and returns a prediction array.
+    :param x_train: training data input
+    :param y_train: training data target
+    :param x_test: testing data input
+    :return: prediction results as dataframe
+    """
+    model = SVC(kernel='linear', C=0.1)
+    model.fit(x_train, y_train)
+    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
+
+    return results
+
+
 def assemble_results(y_pred, y_test, original):
     """
     Takes predicted results for y and original x and y data, uses it all to create two dataframes for further
@@ -334,8 +368,8 @@ def evaluate_confusion(idealresults, MLresults):
     # Calculate accuracy, precision, etc
     TP = confusion[0][0]
     TN = confusion[1][1]
-    FP = confusion[0][1]
-    FN = confusion[1][0]
+    FN = confusion[0][1]
+    FP = confusion[1][0]
     acc = (TP + TN) / (TP + TN + FP + FN)
     p = TP / (TP + FP)
     r = TP / (TP + FN)

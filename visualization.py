@@ -10,11 +10,11 @@ from matplotlib import pyplot as plt
 import MLcomponents
 
 
-dailydf = datamanipulation.retrieve()
-weeklydf = datamanipulation.retrieve(timeframe='weekly')
-monthlydf = datamanipulation.retrieve(timeframe='monthly')
-
-dailydf = datamanipulation.timeformatter(dailydf)
+# dailydf = datamanipulation.retrieve()
+# weeklydf = datamanipulation.retrieve(timeframe='weekly')
+# monthlydf = datamanipulation.retrieve(timeframe='monthly')
+#
+# dailydf = datamanipulation.timeformatter(dailydf)
 
 def candlestick_chart(df, start_date, end_date, indicators=None):
     '''
