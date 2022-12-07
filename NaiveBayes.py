@@ -173,6 +173,7 @@ def run_NB_optimization_experiment():
     smoothing parameter for NB classification. Labeling methods are compared.
     Prints optimal parameters, confusion matrix metrics, adn summary results tables.
     """
+    print("Running NB optimization experiment:\n")
     print("Using continuous trend labeling...")
     compare_transformations_NB()
     print("Using 5-day threshold labeling...")
@@ -186,6 +187,7 @@ def run_NB_final_experiment():
     labeled with cont_trend_method. Prints summary tables for confusion
     matrix and return metrics.
     """
+    print("Running NB optimized model comparison:\n")
     print("Using all indicators...")
     data = process_data(labeler='cont', all_indicators=True)
     X_train, y_train, X_test, y_test = split_data(data)

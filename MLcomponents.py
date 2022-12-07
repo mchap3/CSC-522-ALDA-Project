@@ -11,6 +11,7 @@ from sklearn import metrics
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import PowerTransformer
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
@@ -180,6 +181,23 @@ def SSnormalize(x_train, x_val, x_test):
 
     return x_train, x_val, x_test
 
+
+def PTnormalize(x_train, x_val, x_test):
+    """
+    Normalizes everything with Yeo-Johnson method PowerTransform
+    :param x_train: training data
+    :param x_val: validation data
+    :param x_test: testing data
+    :return: returns normalized versions of each of the inputs
+    """
+    scaler = PowerTransformer(method='yeo-johnson')
+    x_train = scaler.fit_transform(x_train)
+    x_val = scaler.transform(x_val)
+    x_test = scaler.transform(x_test)
+
+    return x_train, x_val, x_test
+
+
 def y_cleaner(y_train, y_val, y_test):
     """
     Takes all of the y columns and replaces -1s with 0s for full compatibility with all models
@@ -277,35 +295,6 @@ def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100, dropout1=
     results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
 
     return results, history
-
-def NB_prediction(x_train, y_train, x_test):
-    """
-    Builds Naive Bayes classification model with training data and returns a prediction array.
-    :param x_train: training data input
-    :param y_train: training data target
-    :param x_test: testing data input
-    :return: prediction results as dataframe
-    """
-    model = GaussianNB(var_smoothing=0.02782559402207126)
-    model.fit(x_train, y_train)
-    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
-
-    return results
-
-
-def SVM_prediction(x_train, y_train, x_test):
-    """
-    Builds Naive Bayes classification model with training data and returns a prediction array.
-    :param x_train: training data input
-    :param y_train: training data target
-    :param x_test: testing data input
-    :return: prediction results as dataframe
-    """
-    model = SVC(kernel='linear', C=10)
-    model.fit(x_train, y_train)
-    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
-
-    return results
 
 
 def NB_prediction(x_train, y_train, x_test):
