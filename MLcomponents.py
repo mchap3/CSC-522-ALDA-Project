@@ -368,8 +368,8 @@ def evaluate_confusion(idealresults, MLresults):
     # Calculate accuracy, precision, etc
     TP = confusion[0][0]
     TN = confusion[1][1]
-    FP = confusion[0][1]
-    FN = confusion[1][0]
+    FN = confusion[0][1]
+    FP = confusion[1][0]
     acc = (TP + TN) / (TP + TN + FP + FN)
     p = TP / (TP + FP)
     r = TP / (TP + FN)
