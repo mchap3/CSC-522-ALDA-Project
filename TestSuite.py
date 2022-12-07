@@ -9,11 +9,12 @@ import visualization
 import datamanipulation
 import datetime as dt
 import MLcomponents
+import experiments
 
 # Prep dailydf
 dailydf = datamanipulation.retrieve()
 dailydf = datamanipulation.timeformatter(dailydf)
-dailydf = indicators.all_indicators(dailydf)
+# dailydf = indicators.all_indicators(dailydf)
 
 # Split into original comparison set, training, validation, and testing sets
 original, training, validation, testing = MLcomponents.data_processor(dailydf)
@@ -29,8 +30,8 @@ x_test = testing[0]
 y_test = testing[1]
 
 # Assemble full dataset for training
-x_train = pd.concat([x_train, x_val])
-y_train = pd.concat([y_train, y_val])
+# x_train = pd.concat([x_train, x_val])
+# y_train = pd.concat([y_train, y_val])
 
 # Normalize x_values with StandardScaler
 x_train, x_val, x_test = MLcomponents.SSnormalize(x_train, x_val, x_test)
@@ -39,9 +40,9 @@ x_train, x_val, x_test = MLcomponents.SSnormalize(x_train, x_val, x_test)
 y_train, y_val, y_test = MLcomponents.y_cleaner(y_train, y_val, y_test)
 
 # Use ML model to make prediction
-# y_pred = MLcomponents.RF_prediction(x_train, y_train, x_test, n_estimators=140, maxdepth=10)
-# y_pred, history = MLcomponents.ANN_prediction(x_train, y_train, x_val, y_val, x_test)
-y_pred = MLcomponents.KNN_prediction(x_train, y_train, x_test, n_neighbors=7)
+# y_pred = MLcomponents.RF_prediction(x_train, y_train, x_test)
+y_pred, history = MLcomponents.ANN_prediction(x_train, y_train, x_val, y_val, x_test)
+# y_pred = MLcomponents.KNN_prediction(x_train, y_train, x_test, n_neighbors=7)
 
 # Take predicted values and reattach them to previous data for evaluation
 idealresults, MLresults = MLcomponents.assemble_results(y_pred, y_test, original)
@@ -54,3 +55,13 @@ idealacctdf, MLacctdf = MLcomponents.evaluate_returns(idealresults, MLresults)
 
 # Plot account value over time
 visualization.account_comparison_plot(idealacctdf, MLacctdf, showideal=False)
+
+# Feel free to uncomment any of the experiments below to run them and see results. Warning: the ANN experiments take
+# quite some time to run.
+# experiments.label_comparison()
+# experiments.trend_optimization()
+# experiments.RF_optimization()
+# experiments.RF_comparison()
+# experiments.ANN_optimization()
+# experiments.ANN_regularization()
+# experiments.KNN_neighbor_optimization()

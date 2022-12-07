@@ -175,7 +175,7 @@ def RF_optimization():
         k = 0
 
         # Then iterate over each value of n_estimators
-        for n in range(10, 260, 10):
+        for n in range(10, 250, 10):
             j = (n/10) - 1
 
             # Normalize x_values with StandardScaler
@@ -221,6 +221,10 @@ def RF_optimization():
         newcols.append(n)
 
     estimatorsummary.columns = newcols
+
+    # Calculate averages for plotting
+    estimatorsummary.loc['mean'] = estimatorsummary.mean()
+    depthsummary.loc['mean'] = depthsummary.mean()
     estimatorsummary = estimatorsummary.transpose()
 
     print('Estimator Results: ')
@@ -232,32 +236,39 @@ def RF_optimization():
     print('Depth Results:')
     print(depthsummary.to_string())
 
+
+
     # Generate plot for n_estimators
     plt.figure()
-    for i in range(len(estimatorsummary.columns)):
-        fold = i + 1
-        label = 'Fold ' + str(fold)
-        plt.plot(estimatorsummary[i], label=label)
+    # for i in range(len(estimatorsummary.columns)):
+    #     fold = i + 1
+    #     label = 'Fold ' + str(fold)
+    #     plt.plot(estimatorsummary[i], label=label)
+    estimatorsummary = estimatorsummary.transpose()
+    estimators = [i for i in range(10, 250, 10)]
+    plt.plot(estimators, estimatorsummary.loc['mean'])
     plt.title('Performance Varying n_estimators')
     plt.xlabel('n_estimators')
     plt.ylabel('Accuracy')
-    plt.legend()
+    # plt.legend()
     plt.tight_layout()
     plt.show()
 
     # Generate plot for max_depth
     plt.figure()
-    for col in depthsummary.columns:
-        if math.isnan(col):
-            plt.plot(depthsummary.iloc[:, -1], label='MD: None')
-        else:
-            depth = int(col)
-            label = 'MD: ' + str(depth)
-            plt.plot(depthsummary[col], label=label)
+    # for col in depthsummary.columns:
+    #     if math.isnan(col):
+    #         plt.plot(depthsummary.iloc[:, -1], label='MD: None')
+    #     else:
+    #         depth = int(col)
+    #         label = 'MD: ' + str(depth)
+    #         plt.plot(depthsummary[col], label=label)
+    depthvals = ['10', '25', '50', '100', '250', '500', '1000', 'None']
+    plt.bar(depthvals, depthsummary.loc['mean'])
     plt.title('Performance Varying maxdepth')
-    plt.xlabel('Fold')
+    plt.xlabel('Max Depth')
     plt.ylabel('Accuracy')
-    plt.legend()
+    # plt.legend()
     plt.tight_layout()
     plt.show()
 
@@ -372,7 +383,7 @@ def ANN_optimization():
     x_test = testing[0]
     y_test = testing[1]
 
-    # Take fold with most of the available trainign data
+    # Take fold with most of the available training data
     x_train = training[8][0]
     y_train = training[8][1]
     x_val = validation[8][0]
@@ -424,7 +435,7 @@ def ANN_optimization():
     # 2) 100 neurons, drop1 = 0.1, drop2 = 0.5
     # For further testing, 2) was chosen for the reduction in computational complexity with fewer nodes/neurons
 
-def ann_regularization():
+def ANN_regularization():
     """
     Function to optimize number of training epochs to prevent overfitting.
     :return: Nothing, prints a graph
@@ -442,7 +453,7 @@ def ann_regularization():
     x_test = testing[0]
     y_test = testing[1]
 
-    # Take fold with most of the available trainign data
+    # Take fold with most of the available training data
     x_train = training[8][0]
     y_train = training[8][1]
     x_val = validation[8][0]
@@ -470,7 +481,7 @@ def ann_regularization():
     while i < 25:
         # Make prediction
         y_pred, history = MLcomponents.ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100,
-                                                      dropout1=0.1, dropout2=0.5, epochs=50)
+                                                      dropout1=0.1, dropout2=0.5, epochs=50, es=False)
 
         # Grab training results
         trainacc = history.history['accuracy']
@@ -545,14 +556,6 @@ def KNN_neighbor_optimization():
     x_test = testing[0]
     y_test = testing[1]
 
-    # Take fold with most of the available training data
-    # x_train = training[8][0]
-    # y_train = training[8][1]
-    # x_val = validation[8][0]
-    # y_val = validation[8][1]
-
-
-
     neighbors = [i for i in range(1, 20, 1)]
 
     # Initialize dataframe to capture results
@@ -600,4 +603,3 @@ def KNN_neighbor_optimization():
     plt.tight_layout()
     plt.show()
 
-KNN_neighbor_optimization()
