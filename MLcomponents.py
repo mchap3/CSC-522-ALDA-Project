@@ -1,7 +1,6 @@
 '''
 Place for putting together machine learning functions/analyses.
 '''
-from scipy.signal import argrelextrema
 import numpy as np
 import pandas as pd
 import datamanipulation
@@ -10,11 +9,11 @@ import math
 import sklearn
 from sklearn import metrics
 from sklearn.model_selection import TimeSeriesSplit
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier as KNN
-from sklearn.model_selection import RandomizedSearchCV
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
 import sys
 import tensorflow as tf
 from tensorflow import keras
@@ -106,8 +105,10 @@ def five_day_centroid(data):
 
     # Drop all rows with NaN
     data = data.dropna()
+
     # Reset row numbers
     data = data.reset_index(drop=True)
+
     # Remove unneeded columns
     data = data.drop('Rolling5_Buy', axis = 1)
     data = data.drop('Rolling5_Sell', axis = 1)
@@ -135,17 +136,12 @@ def data_processor(data):
     y_test = y[y.index >= '2017-01-01']
     x = x[x.index < '2017-01-01']
     y = y[y.index < '2017-01-01']
-    # tscv = TimeSeriesSplit(n_splits=10, max_train_size=(math.ceil(0.6 * modeldata.shape[0])))
     tscv = TimeSeriesSplit(n_splits=10)
     training = []
     validation = []
     testing = [x_test, y_test]
 
-    # Probably could be cleaned up a little bit. I did not make it so that the test values are removed from the pool
-    # before going into tscv. I ended up using index 5 for training and validation as that took the training set from
-    # 2003 to 2013, and the validation set from 2014-2015 about. Index 6 could have been usable for models that didn't
-    # necessarily require a validation set (train: 2003 - 2015, val: 2015-2017), but interestingly I got better results
-    # with the index 5 years.
+    # Split values with time series cross validation.
     for train_index, test_index in tscv.split(x):
         trainentry = []
         valentry = []
@@ -223,15 +219,15 @@ def RF_prediction(x_train, y_train, x_test, n_estimators=140, maxdepth=10):
 
 
 def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100, dropout1=0.1,
-                   dropout2=0.5, epochs=10, es=True):
+                   dropout2=0.5, epochs=12, es=True):
     """
-
+    ANN model with optimized parameters as defaults to predict buy/sell points.
     :param x_train:
     :param y_train:
     :param x_val:
     :param y_val:
     :param x_test:
-    :return:
+    :return: prediction and model history for evaluation
     """
     input_neurons = x_train.shape[1]
     hidden1 = input_neurons * 2
@@ -248,16 +244,6 @@ def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100, dropout1=
     # batch_size = 10
 
     # Set up model
-    # inputs = keras.Input(shape=(input_neurons,), name='data')
-    # x1 = keras.layers.Dense(hidden1, activation=hidden_act, name='hidden')(inputs)
-    # # x1 = keras.layers.LSTM(32, input_shape=(1, x_train.shape[1]), activation = 'relu', return_sequences=False)(inputs)
-    # x2 = keras.layers.Dropout(.75)(x1)
-    # x3 = keras.layers.Dense(hidden1/4)(x2)
-    # output = keras.layers.Dense(output_neurons, activation=out_act, name='predictions')(x3)
-    #
-    # model = keras.Model(inputs=inputs, outputs=output)
-    # model.compile(optimizer=optim, loss=loss, metrics=metrics)
-    # model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
     model = keras.Sequential([keras.layers.Dense(hidden1, activation=hidden_act, input_dim=input_neurons),
                               keras.layers.Activation('relu'),
                               keras.layers.Dropout(dropout1),
@@ -281,6 +267,35 @@ def ANN_prediction(x_train, y_train, x_val, y_val, x_test, hidden=100, dropout1=
     results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
 
     return results, history
+
+def NB_prediction(x_train, y_train, x_test):
+    """
+    Builds Naive Bayes classification model with training data and returns a prediction array.
+    :param x_train: training data input
+    :param y_train: training data target
+    :param x_test: testing data input
+    :return: prediction results as dataframe
+    """
+    model = GaussianNB(var_smoothing=0.02782559402207126)
+    model.fit(x_train, y_train)
+    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
+
+    return results
+
+
+def SVM_prediction(x_train, y_train, x_test):
+    """
+    Builds Naive Bayes classification model with training data and returns a prediction array.
+    :param x_train: training data input
+    :param y_train: training data target
+    :param x_test: testing data input
+    :return: prediction results as dataframe
+    """
+    model = SVC(kernel='linear', C=10)
+    model.fit(x_train, y_train)
+    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
+
+    return results
 
 
 def assemble_results(y_pred, y_test, original):
@@ -363,10 +378,6 @@ def evaluate_returns(idealresults, MLresults):
     :return: nothing, prints table with results
     """
 
-    # for model, result in MLresults.items():
-    #     colname = model + ' class'
-    #     idealresults[colname] = result['class']
-
     # Calculate ideal returns
     idealresults = datamanipulation.mid(idealresults)
     idealresults.reset_index(inplace=True)
@@ -385,12 +396,3 @@ def evaluate_returns(idealresults, MLresults):
     print(MLreturns)
 
     return idealacctdf, MLacctdf
-
-
-
-    # if MLresults.iloc[-1, 1] != MLresults.iloc[-2,-1]:
-    #     MLresults = MLresults.iloc[:-1, :]
-    # print(results.to_string())
-    # print(MLresults)
-
-
