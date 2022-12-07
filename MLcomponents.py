@@ -11,6 +11,7 @@ from sklearn import metrics
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import PowerTransformer
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
@@ -179,6 +180,23 @@ def SSnormalize(x_train, x_val, x_test):
     x_test = scaler.transform(x_test)
 
     return x_train, x_val, x_test
+
+
+def PTnormalize(x_train, x_val, x_test):
+    """
+    Normalizes everything with Yeo-Johnson method PowerTransform
+    :param x_train: training data
+    :param x_val: validation data
+    :param x_test: testing data
+    :return: returns normalized versions of each of the inputs
+    """
+    scaler = PowerTransformer(method='yeo-johnson')
+    x_train = scaler.fit_transform(x_train)
+    x_val = scaler.transform(x_val)
+    x_test = scaler.transform(x_test)
+
+    return x_train, x_val, x_test
+
 
 def y_cleaner(y_train, y_val, y_test):
     """
