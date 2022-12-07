@@ -1,6 +1,7 @@
 '''
 Place for putting together machine learning functions/analyses.
 '''
+
 import numpy as np
 import pandas as pd
 import datamanipulation
@@ -23,7 +24,6 @@ import matplotlib.pyplot as plt
 if not sys.warnoptions:
     import warnings
     warnings.simplefilter("ignore")
-
 
 def cont_trend_label(df, calc='close', w=0.05):
     """
@@ -62,7 +62,9 @@ def cont_trend_label(df, calc='close', w=0.05):
                 xH, HT = X[i], i
             if X[i] < xH - xH * w and LT <= HT:
                 for j in range(len(y)):
+
                     if j > LT and j <= HT:
+
                         y[j] = 1
                 xL, LT, Cid = X[i], i, -1
         if Cid < 0:
@@ -70,7 +72,9 @@ def cont_trend_label(df, calc='close', w=0.05):
                 xL, LT = X[i], i
             if X[i] > xL + xL * w and HT <= LT:
                 for j in range(len(y)):
+
                     if j > HT and j <= LT:
+
                         y[j] = -1
                 xH, HT, Cid = X[i], i, 1
 
@@ -112,6 +116,7 @@ def five_day_centroid(data):
     data = data.drop('Rolling5_Buy', axis = 1)
     data = data.drop('Rolling5_Sell', axis = 1)
 
+    data.loc[0, 'class'] = 1
     for current in data.loc[data['class'] == 0].index:
         if current != 0:
             data.loc[current, 'class'] = data.loc[current - 1, 'class']
@@ -303,6 +308,36 @@ def SVM_prediction(x_train, y_train, x_test):
     return results
 
 
+def NB_prediction(x_train, y_train, x_test):
+    """
+    Builds Naive Bayes classification model with training data and returns a prediction array.
+    :param x_train: training data input
+    :param y_train: training data target
+    :param x_test: testing data input
+    :return: prediction results as dataframe
+    """
+    model = GaussianNB(var_smoothing=0.0004641588833612782)
+    model.fit(x_train, y_train)
+    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
+
+    return results
+
+
+def SVM_prediction(x_train, y_train, x_test):
+    """
+    Builds Naive Bayes classification model with training data and returns a prediction array.
+    :param x_train: training data input
+    :param y_train: training data target
+    :param x_test: testing data input
+    :return: prediction results as dataframe
+    """
+    model = SVC(kernel='linear', C=0.1)
+    model.fit(x_train, y_train)
+    results = pd.DataFrame(model.predict(x_test), columns=['Predicted Class'])
+
+    return results
+
+
 def assemble_results(y_pred, y_test, original):
     """
     Takes predicted results for y and original x and y data, uses it all to create two dataframes for further
@@ -361,6 +396,7 @@ def evaluate_confusion(idealresults, MLresults):
     TN = confusion[1][1]
     FP = confusion[1][0]
     FN = confusion[0][1]
+    
     acc = (TP + TN) / (TP + TN + FP + FN)
     p = TP / (TP + FP)
     r = TP / (TP + FN)
@@ -409,3 +445,4 @@ def evaluate_returns(idealresults, MLresults):
     # print(MLreturns)
 
     return idealreturns, MLreturns, idealacctdf, MLacctdf
+

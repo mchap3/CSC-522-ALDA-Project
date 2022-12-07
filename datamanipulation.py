@@ -41,6 +41,7 @@ def timeformatter(df):
     return df
 
 
+
 def mid(data):
     '''
     :param data: stock data to work with
@@ -71,3 +72,12 @@ def centroid(data):
     data['centroid'] = (data['open'] + data['high'] + data['low'] + data['close']) / 4
 
     return data
+
+def date_mask(df, start_date, end_date):
+    if 'time and date' in df.columns:
+        df = timeformatter(df)
+    mask = (df['date'] >= start_date) & (df['date'] <= end_date)
+    data = df.loc[mask]
+    # data['date'] = pd.to_datetime(data['date'])
+    return data
+
