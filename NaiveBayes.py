@@ -56,7 +56,7 @@ def split_data(data):
     :return: split data as training/testing sets
     """
     # split into training/testing sets
-    training = data['2003-07-01':'2013-12-29']
+    training = data['2003-07-01':'2016-12-31']
     testing = data['2017-01-01':]
 
     # split into X and y sets
@@ -167,26 +167,43 @@ def compare_transformations_NB(labels='cont'):
         get_returns_NB(X_test, y_pred)
 
 
-if __name__ == "__main__":
-    # for optimization experiments
-    # print("Using continuous trend labeling...")
-    # compare_transformations_NB()
-    # print("Using 5-day threshold labeling...")
-    # compare_transformations_NB(labels='5-day')
+def run_NB_optimization_experiment():
+    """
+    Run experiment to determine optimal data preprocessing techniques and
+    smoothing parameter for NB classification. Labeling methods are compared.
+    Prints optimal parameters, confusion matrix metrics, adn summary results tables.
+    """
+    print("Using continuous trend labeling...")
+    compare_transformations_NB()
+    print("Using 5-day threshold labeling...")
+    compare_transformations_NB(labels='5-day')
 
-    # for optimal model results
+
+def run_NB_final_experiment():
+    """
+    Run experiment for results of optimized model (yeo-johnson power
+    transformation with smoothing parameter = 0.0005) predictions on testing set
+    labeled with cont_trend_method. Prints summary tables for confusion
+    matrix and return metrics.
+    """
+    print("Using all indicators...")
     data = process_data(labeler='cont', all_indicators=True)
-    # data = process_data(labeler='cont', all_indicators=False)
     X_train, y_train, X_test, y_test = split_data(data)
-    pipe = Pipeline(steps=[('trans', StandardScaler()),('gnb', GaussianNB(var_smoothing=0.02782559402207126))])
+    pipe = Pipeline(steps=[('trans', PowerTransformer(method='yeo-johnson')),
+                           ('gnb', GaussianNB(var_smoothing=0.0004641588833612782))])
     y_pred = predict_NB(pipe, X_train, y_train, X_test)
     metrics_NB(y_test, y_pred)
     get_returns_NB(X_test, y_pred)
-    # x_trans = pipe[0].fit_transform(X_train, y_train)
-    # x_test = pipe[0].transform(X_test)
-    # print(pd.DataFrame(x_trans))
-    #
-    # print(pd.DataFrame(y_pred))
-    # y_train, _, _ = MLcomponents.y_cleaner(y_train, y_train, y_train)
-    # print(pd.DataFrame(y_train).head())
 
+    print("Using no indicators...")
+    data = process_data(labeler='cont', all_indicators=False)
+    X_train, y_train, X_test, y_test = split_data(data)
+    pipe = Pipeline(steps=[('trans', PowerTransformer(method='yeo-johnson')),
+                           ('gnb', GaussianNB(var_smoothing=0.0004641588833612782))])
+    y_pred = predict_NB(pipe, X_train, y_train, X_test)
+    metrics_NB(y_test, y_pred)
+    get_returns_NB(X_test, y_pred)
+
+if __name__ == "__main__":
+    run_NB_optimization_experiment()
+    run_NB_final_experiment()

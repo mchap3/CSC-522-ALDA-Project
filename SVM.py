@@ -50,7 +50,7 @@ def tune_SVM_linear(pipe, X_train, y_train):
     :return: results as dataframe and GridSearchCV object
     """
     # define CV method and classifier
-    tscv = TimeSeriesSplit(n_splits=5)
+    tscv = TimeSeriesSplit(n_splits=10)
     # initialize parameter search values
     parameters = [{'svc__kernel': ['linear'], 'svc__C': [0.1, 1, 10, 100]}]
     # specify scoring metrics
@@ -149,10 +149,10 @@ def compare_best_SVM(labels='cont', indicators=True):
     """
     data = process_data(labeler=labels, all_indicators=indicators)
     X_train, y_train, X_test, y_test = split_data(data)
-    pipes = [Pipeline(steps=[('trans', StandardScaler()), ('svc', SVC())]),
-             Pipeline(steps=[('trans', PowerTransformer(method='yeo-johnson')), ('svc', SVC())])]
+    pipes = [Pipeline(steps=[('trans', StandardScaler()), ('svc', SVC())])]#,
+             # Pipeline(steps=[('trans', PowerTransformer(method='yeo-johnson')), ('svc', SVC())])]
     transformations = ['standardized', 'yeo-johnson']
-    best_params = [10, 0.1]
+    best_params = [0.1, 0.1]
     for i, pipe in enumerate(pipes):
         pipe.set_params(svc__kernel='linear', svc__C=best_params[i])
         print("Best SVM for %s data transformation:" % transformations[i])
@@ -161,16 +161,31 @@ def compare_best_SVM(labels='cont', indicators=True):
         get_returns_SVM(X_test, y_pred)
 
 
-if __name__ == "__main__":
+def run_SVM_optimization_experiment():
+    """
+    Run experiment to determine optimal kernel and linear kernel parameters
+    for SVM classification. Data preprocessing techniques (standardization and
+    labeling methods) are compared. Prints optimal paramaters and summary
+    results table.
+    """
     print("Using continuous trend labeling...")
-    # for optimization experiments
-    # compare_transformations_SVM()
-    # for optimal model comparison
-    compare_best_SVM()
-    # compare_best_SVM(indicators=False)
+    compare_transformations_SVM()
+    print("Using 5-day threshold labeling...")
+    compare_transformations_SVM(labels='5-day')
 
-    # print("Using 5-day threshold labeling...")
-    # for optimization experiments
-    # compare_transformations_SVM(labels='5-day')
-    # for optimal model comparison
-    # compare_best_SVM(labels='5-day')
+
+def run_SVM_final_experiment():
+    """
+    Run experiment for results of optimized model (linear kernel
+    with C=0.1) predictions on testing set. Compare results using
+    all indicators and no indicators. Prints summary tables for confusion
+    matrix and return metrics.
+    """
+    print("Using all indicators...")
+    compare_best_SVM()
+    print("Using no indicators...")
+    compare_best_SVM(indicators=False)
+
+if __name__ == "__main__":
+    run_SVM_optimization_experiment()
+    run_SVM_final_experiment()
