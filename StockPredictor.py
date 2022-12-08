@@ -1,4 +1,4 @@
-'''
+"""
 Final interface of code. Central place to view/run all experiments, run final optimized models, and summarize results.
 Please note that the results observed may not match those reported, as many of the models are stochastic and generate
 a spread of results. The results we reported were close to median performance for each model.
@@ -8,7 +8,7 @@ tables/plots. To view our experiments, comment out the portion of the code that 
 3), and uncomment individual functions from section 2 of this script.
 
 Wish we could have made a better user interface, but that was beyond the scope of the project! Enjoy ^_^
-'''
+"""
 
 import visualization
 import SVM
