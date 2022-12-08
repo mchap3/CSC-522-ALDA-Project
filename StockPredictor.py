@@ -13,6 +13,7 @@ Wish we could have made a better user interface, but that was beyond the scope o
 import visualization
 import SVM
 import NaiveBayes
+import experiments
 
 """ 
 I) This first section allows you to choose what results you would like to see! Takes some user inputs and produces the
