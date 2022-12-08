@@ -11,6 +11,7 @@ import MLcomponents
 import accountperformance
 
 
+
 def account_comparison_plot(idealdf, MLdfs, showideal=False):
     """
     Plotting tool to compare model account values over time against each other and/or the ideal case.
@@ -72,9 +73,16 @@ def project_summary(add_indicators=True, plotideal=False):
     x_val_KNN = validation[9][0]
     y_val_KNN = validation[9][1]
 
+    x_train_NB = pd.concat([x_train_KNN, x_val_KNN])
+    y_train_NB = pd.concat([y_train_KNN, y_val_KNN])
+
     # Get testing data out
     x_test = testing[0]
     y_test = testing[1]
+
+    x_test_KNN = testing[0]
+    x_test_NB = testing[0]
+    x_test_SVM = testing[0]
 
     # Assemble full dataset for training if you so choose
     # x_train = pd.concat([x_train, x_val])
@@ -82,11 +90,16 @@ def project_summary(add_indicators=True, plotideal=False):
 
     # Normalize x_values with StandardScaler
     x_train, x_val, x_test = MLcomponents.SSnormalize(x_train, x_val, x_test)
-    x_train_KNN, x_val_KNN, x_test_KNN = MLcomponents.SSnormalize(x_train_KNN, x_val_KNN, x_test)
+    x_train_KNN, x_val_KNN, x_test_KNN = MLcomponents.SSnormalize(x_train_KNN, x_val_KNN, x_test_KNN)
+    x_train_SVM, _, x_test_SVM = MLcomponents.SSnormalize(x_train_NB, x_val_KNN, x_test_SVM)
+
+    # Normalize x_values with PowerTransformer for NB
+    x_train_NB, _, x_test_NB = MLcomponents.PTnormalize(x_train_NB, x_val_KNN, x_test_NB)
 
     # Clean up y values with y_cleaner
     y_train, y_val, y_test = MLcomponents.y_cleaner(y_train, y_val, y_test)
     y_train_KNN, y_val_KNN, y_test_KNN = MLcomponents.y_cleaner(y_train_KNN, y_val_KNN, y_test)
+    y_train_NB, _, y_test_NB = MLcomponents.y_cleaner(y_train_NB, y_val_KNN, y_test)
 
     # Use ML model to make prediction then take predicted values and reattach them to previous data for evaluation.
     # Calculate confusion metrics and account details for each model, one at a time, in case there are any issues with
@@ -108,20 +121,20 @@ def project_summary(add_indicators=True, plotideal=False):
     _, ANNreturns, _, ANNacctdf = MLcomponents.evaluate_returns(ANNideal, ANNresults)
 
     # KNN
-    KNN_pred = MLcomponents.KNN_prediction(x_train_KNN, y_train_KNN, x_test)
+    KNN_pred = MLcomponents.KNN_prediction(x_train_KNN, y_train_KNN, x_test_KNN)
     KNNideal, KNNresults = MLcomponents.assemble_results(KNN_pred, y_test, original)
     KNNmetrics = MLcomponents.evaluate_confusion(KNNideal, KNNresults)
     _, KNNreturns, _, KNNacctdf = MLcomponents.evaluate_returns(KNNideal, KNNresults)
 
     # SVM
-    SVM_pred = MLcomponents.SVM_prediction(x_train, y_train, x_test)
-    SVMideal, SVMresults = MLcomponents.assemble_results(SVM_pred, y_test, original)
+    SVM_pred = MLcomponents.SVM_prediction(x_train_SVM, y_train_NB, x_test_SVM)
+    SVMideal, SVMresults = MLcomponents.assemble_results(SVM_pred, y_test_NB, original)
     SVMmetrics = MLcomponents.evaluate_confusion(SVMideal, SVMresults)
     _, SVMreturns, _, SVMacctdf = MLcomponents.evaluate_returns(SVMideal, SVMresults)
 
     # NB
-    NB_pred = MLcomponents.NB_prediction(x_train, y_train, x_test)
-    NBideal, NBresults = MLcomponents.assemble_results(NB_pred, y_test, original)
+    NB_pred = MLcomponents.NB_prediction(x_train_NB, y_train_NB, x_test_NB)
+    NBideal, NBresults = MLcomponents.assemble_results(NB_pred, y_test_NB, original)
     NBmetrics = MLcomponents.evaluate_confusion(NBideal, NBresults)
     _, NBreturns, _, NBacctdf = MLcomponents.evaluate_returns(NBideal, NBresults)
 
