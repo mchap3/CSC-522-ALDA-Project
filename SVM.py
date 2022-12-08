@@ -127,7 +127,9 @@ def compare_transformations_SVM(labels='cont'):
     """
     data = process_data(labeler=labels, all_indicators=True)
     X_train, y_train, X_test, y_test = split_data(data)
+
     pipes = [Pipeline(steps=[('trans', StandardScaler()),('svc', SVC())]),
+
              Pipeline(steps=[('trans', PowerTransformer(method='yeo-johnson')),('svc', SVC())])]
     transformations = ['standardized', 'yeo-johnson']
     for i, pipe in enumerate(pipes):
@@ -168,6 +170,7 @@ def run_SVM_optimization_experiment():
     labeling methods) are compared. Prints optimal paramaters and summary
     results table.
     """
+
     print("Running SVM optimization experiment:\n")
     print("Using continuous trend labeling...")
     compare_transformations_SVM()
@@ -181,7 +184,7 @@ def run_SVM_final_experiment():
     with C=0.1) predictions on testing set. Compare results using
     all indicators and no indicators. Prints summary tables for confusion
     matrix and return metrics.
-    """
+
     print("Running SVM optimized model comparison:\n")
     print("Using all indicators...")
     compare_best_SVM()
@@ -191,3 +194,4 @@ def run_SVM_final_experiment():
 if __name__ == "__main__":
     run_SVM_optimization_experiment()
     run_SVM_final_experiment()
+
