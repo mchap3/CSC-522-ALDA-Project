@@ -184,7 +184,7 @@ def run_SVM_final_experiment():
     with C=0.1) predictions on testing set. Compare results using
     all indicators and no indicators. Prints summary tables for confusion
     matrix and return metrics.
-
+    """
     print("Running SVM optimized model comparison:\n")
     print("Using all indicators...")
     compare_best_SVM()
